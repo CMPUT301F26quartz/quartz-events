@@ -1,6 +1,6 @@
 University of Alberta  CMPUT301 Project
 # quartz
-Team members:
+Team members:  
 jmlister  
 kanis  
 kuan4  
