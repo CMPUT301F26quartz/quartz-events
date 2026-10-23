@@ -10,13 +10,27 @@ class AuthRepository {
 
     //Register a new user with email and passwor
     fun register(
+        name: String,
         email: String,
         password: String,
         onResult: (Boolean, String?) -> Unit
     ) {
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                onResult(true, null)
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid
+                if(uid == null) {
+                    onResult(false, "Could not get user ID")
+                    return@addOnSuccessListener
+                }
+                val profile = UserProfile(
+                    uid = uid,
+                    name = name,
+                    email = email,
+                    role = "entrant"
+                )
+                saveUserProfile(profile) { success, error ->
+                    onResult(success, error)
+                }
             }
             .addOnFailureListener { exception ->
                 onResult(false, exception.message)
