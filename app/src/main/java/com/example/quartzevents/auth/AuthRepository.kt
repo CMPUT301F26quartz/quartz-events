@@ -1,8 +1,11 @@
 package com.example.quartzevents.auth
 
 import com.google.firebase.auth.FirebaseAuth
+import com.example.quartzevents.model.UserProfile
+import com.google.firebase.firestore.FirebaseFirestore
 
 class AuthRepository {
+    private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
     //Register a new user with email and passwor
@@ -43,5 +46,36 @@ class AuthRepository {
     //Logout
     fun logout() {
         auth.signOut()
+    }
+    //Save a user's profile in Firestore
+    fun saveUserProfile(
+        profile: UserProfile,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        db.collection("users")
+            .document(profile.uid)
+            .set(profile)
+            .addOnSuccessListener {
+                onResult(true, null)
+            }
+            .addOnFailureListener { exception ->
+                onResult(false, exception.message)
+            }
+    }
+
+    fun getUserProfile(
+        uid: String,
+        onResult: (UserProfile?, String?) -> Unit
+    ) {
+        db.collection("users")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { document ->
+                val profile = document.toObject(UserProfile::class.java)
+                onResult(profile, null)
+            }
+            .addOnFailureListener { exception ->
+                onResult(null, exception.message)
+            }
     }
 }
