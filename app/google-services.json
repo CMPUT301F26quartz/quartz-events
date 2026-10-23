@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "121569256984",
+    "project_id": "quartz-events",
+    "storage_bucket": "quartz-events.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121569256984:android:1f30b22745dfea561b856d",
+        "android_client_info": {
+          "package_name": "com.example.quartzevents"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByaD-CiiplJMSiI_ABCKBo71RB3vBtHp0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
