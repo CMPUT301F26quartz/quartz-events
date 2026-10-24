@@ -4,5 +4,7 @@ data class UserProfile(
     val uid: String = "",
     val name: String = "",
     val email: String = "",
-    val role: String = "entrant"
+    val role: String = "entrant",
+    val username: String = "",
+    val phoneNumber: String = ""
 )
