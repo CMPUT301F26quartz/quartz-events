@@ -1,4 +1,4 @@
-package com.example.quartz
+package com.example.quartzevents
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,14 +11,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.quartz.ui.theme.QuartzTheme
+import com.example.quartzevents.ui.theme.QuartzEventsTheme
+import android.util.Log
+import com.google.firebase.FirebaseApp
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val firebaseApp = FirebaseApp.initializeApp(this)
+        if (firebaseApp != null) {
+            Log.d("QuartzFirebase", "Firebase initialized successfully")
+        } else {
+            Log.e("QuartzFirebase", "Firebase initialization failed")
+        }
         enableEdgeToEdge()
         setContent {
-            QuartzTheme {
+            QuartzEventsTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
                         name = "Android",
@@ -41,7 +50,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    QuartzTheme {
+    QuartzEventsTheme {
         Greeting("Android")
     }
 }

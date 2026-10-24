@@ -1,4 +1,4 @@
-package com.example.quartz
+package com.example.quartzevents
 
 import org.junit.Test
 

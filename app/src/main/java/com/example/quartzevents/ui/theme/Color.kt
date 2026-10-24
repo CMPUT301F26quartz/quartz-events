@@ -1,4 +1,4 @@
-package com.example.quartz.ui.theme
+package com.example.quartzevents.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

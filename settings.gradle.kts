@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "quartz"
+rootProject.name = "QuartzEvents"
 include(":app")
  
