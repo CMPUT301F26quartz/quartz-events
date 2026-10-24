@@ -13,8 +13,16 @@ class AuthRepository {
         name: String,
         email: String,
         password: String,
+        role: String,
+        username: String,
+        phoneNumber: String,
         onResult: (Boolean, String?) -> Unit
     ) {
+        // Only entrants and campsite owners can register
+        if (role != "entrant" && role != "owner") {
+            onResult(false, "Invalid registration role")
+            return
+        }
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid
@@ -26,7 +34,9 @@ class AuthRepository {
                     uid = uid,
                     name = name,
                     email = email,
-                    role = "entrant"
+                    role = role,
+                    username = username,
+                    phoneNumber = phoneNumber
                 )
                 saveUserProfile(profile) { success, error ->
                     onResult(success, error)
