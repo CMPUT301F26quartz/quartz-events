@@ -16,6 +16,8 @@ import com.example.quartzevents.auth.AuthScreen
 import com.example.quartzevents.model.UserProfile
 import com.example.quartzevents.ui.theme.QuartzEventsTheme
 import com.google.firebase.FirebaseApp
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Color
 
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +48,10 @@ fun QuartzEventsApp() {
     var isLoading by remember {
         mutableStateOf(true)
     }
+    // TODO: Replace with shared navigation when the dashboard is ready.
+    var isSearchScreenVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -74,17 +80,31 @@ fun QuartzEventsApp() {
         currentProfile == null -> {
             AuthScreen(
                 onAuthenticated = { profile ->
+                    isSearchScreenVisible = false
                     currentProfile = profile
                 }
             )
         }
 
+        currentProfile?.role == "entrant" && isSearchScreenVisible -> {
+            EntrantSearchScreen(
+                onBack = {
+                    isSearchScreenVisible = false
+                }
+            )
+        }
+
+
         // Show screen based on user role
         else -> {
             RoleHomeScreen(
                 profile = currentProfile!!,
+                onSearch = {
+                    isSearchScreenVisible = true
+                },
                 onLogout = {
                     repository.logout()
+                    isSearchScreenVisible = false
                     currentProfile = null
                 }
             )
@@ -95,6 +115,7 @@ fun QuartzEventsApp() {
 @Composable
 fun RoleHomeScreen(
     profile: UserProfile,
+    onSearch: () -> Unit,
     onLogout: () -> Unit
 ) {
     val roleName = when (profile.role) {
@@ -117,6 +138,12 @@ fun RoleHomeScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (profile.role == "entrant") {
+            SearchCampsitesButton(onClick = onSearch)
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         Text(
             text = "Role: $roleName"
         )
@@ -124,5 +151,23 @@ fun RoleHomeScreen(
         Button(onClick = onLogout) {
             Text("Log Out")
         }
+    }
+}
+// The future entrant dashboard can reuse this search entry.
+@Composable
+private fun SearchCampsitesButton(
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF254D3C),
+            contentColor = Color.White
+        )
+    ) {
+        Text(text = "Search Campsites")
     }
 }
