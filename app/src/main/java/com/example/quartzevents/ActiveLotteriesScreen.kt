@@ -40,11 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun ActiveLotteriesScreen(
-    campsite: String
+    campsite: String = "Pine Ridge"
 ){
     Column(
         modifier = Modifier.fillMaxSize()
-            .background(MaterialTheme.colorScheme.tertiary)
+            .background(MaterialTheme.colorScheme.secondary)
     ){
         Row (
             horizontalArrangement = Arrangement.Start,
@@ -74,36 +74,53 @@ fun ActiveLotteriesScreen(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary
             )
-            Text(
-                "For: "+campsite,
-                fontSize = 20.sp,
-                color = Color.Gray
-            )
         }
         val temp_sites1: MutableList<Campsite> = mutableListOf(Campsite("Pine Ridge","Hinton, Alberta"), Campsite("Cedar Creek", "Edmonton Area, Alberta"))
         val temp_Lottery_list: MutableList<Lottery> = mutableListOf(Lottery(temp_sites1,"Summer Camping Lottery",Date("2026-10-20"),Date("2026-11-10"),Date("2027-06-01"),Date("2027-06-30")))
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
+            Column(
+                modifier = Modifier.fillMaxHeight().padding(top = 25.dp, start = 25.dp),
             ) {
-                itemsIndexed(temp_Lottery_list) { index, lottery ->
-                    CampsiteLotteryDisplay(
-                        modifier = Modifier,
-                        lottery = lottery,
-                        onClick = {
+                Text(
+                    "Available Lotteries",
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
+                Spacer(modifier = Modifier.padding(top = 10.dp))
+
+                Text(
+                    "For: " + campsite,
+                    fontSize = 20.sp,
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    itemsIndexed(temp_Lottery_list) { index, lottery ->
+                        CampsiteLotteryDisplay(
+                            modifier = Modifier,
+                            lottery = lottery,
+                            onClick = {
+
+                            }
+                        )
+                        if (index < temp_Lottery_list.lastIndex) {
+                            HorizontalDivider()
                         }
-                    )
-                    if (index < temp_Lottery_list.lastIndex) {
-                        HorizontalDivider()
                     }
                 }
             }
         }
     }
 }
+
 
 
 @Preview
@@ -259,6 +276,12 @@ fun CampsiteLotteryDisplay (
                 )
 
             }
+            Icon(
+                painter = painterResource(R.drawable.chevron_right),
+                contentDescription = "arrow icon",
+                modifier = Modifier.padding(start = 5.dp),
+                tint = Color.Gray
+            )
         }
     }
 }
