@@ -19,6 +19,9 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 
+import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
+import com.example.quartzevents.OwnerFunctions.RegisterCampsite
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +55,11 @@ fun QuartzEventsApp() {
     var isSearchScreenVisible by rememberSaveable {
         mutableStateOf(false)
     }
+    //booleans to act as middleman to switch screens
+    var isCreatingCampsite by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isViewingSettings by rememberSaveable { mutableStateOf(false) }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -96,7 +104,29 @@ fun QuartzEventsApp() {
 
 
         // Show screen based on user role
+        // main owner switchboard
         else -> {
+            if (currentProfile?.role == "owner") {
+                OwnerHomeScreen(
+                    profile = currentProfile!!,
+                    onLogout = {
+                        repository.logout()
+                        currentProfile = null
+                    },
+                    onAddCampsiteClick = { isCreatingCampsite = true },
+                    onSettingsClick = { isViewingSettings = true },
+                )
+                if (isCreatingCampsite) {
+                    // Show the Add screen
+                    // NOTE: You must create CreateCampsiteScreen() for this to work!
+                    RegisterCampsite(
+                        onBack = { isCreatingCampsite = false },
+                        onSaveSuccess = { isCreatingCampsite = false }
+                    )
+                }
+
+            } else {
+
             RoleHomeScreen(
                 profile = currentProfile!!,
                 onSearch = {
@@ -108,6 +138,7 @@ fun QuartzEventsApp() {
                     currentProfile = null
                 }
             )
+        }
         }
     }
 }
@@ -139,6 +170,12 @@ fun RoleHomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (profile.role == "entrant") {
+            SearchCampsitesButton(onClick = onSearch)
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        if (profile.role == "owner") {
             SearchCampsitesButton(onClick = onSearch)
 
             Spacer(modifier = Modifier.height(16.dp))
