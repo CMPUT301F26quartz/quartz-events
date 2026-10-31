@@ -1,8 +1,9 @@
 package com.example.quartzevents
 
 class Entrant(email: String, name: String, password: String): User(email, name, password) {
-    override fun userType(){
+    override fun userType(): String{
         val type = "entrant"
+        return type
     }
     val reservations: MutableList<Reservation> = mutableListOf()
     var notificationsOn = true

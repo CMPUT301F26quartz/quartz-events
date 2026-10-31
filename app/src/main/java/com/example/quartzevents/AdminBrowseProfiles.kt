@@ -19,20 +19,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun AdminBrowseProfilesScreen(){
-//    onBack: () -> Unit
-//    BackHandler(onBack = onBack)
-    //TODO: make back button
+fun AdminBrowseProfilesScreen(back: () -> Unit){
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -40,23 +39,38 @@ fun AdminBrowseProfilesScreen(){
             .verticalScroll(rememberScrollState())
             .safeDrawingPadding()
             .imePadding(),
-//        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        //Banner Title
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(150.dp)
                 .background(Color(0xFF254D3C)),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.CenterStart
         ) {
-            Text(
-                text = "Manage Profiles",
-                color = Color(0xFFFFFFFF),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+            Row() {
+                //back button, leads back to AdminDashboard
+                TextButton(onClick = back) {
+                    Text(
+                        text = "<",
+                        color = Color(0xFFFFFFFF),
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 14.dp),
+                    )
+                }
+                Text(
+                    text = "Manage Profiles",
+                    color = Color(0xFFFFFFFF),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(vertical = 8.dp, horizontal = 10.dp)
+                )
+            }
+        }//end Banner Box
 
+        //Title 2
         Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = "Registered Profiles",
@@ -77,57 +91,56 @@ fun AdminBrowseProfilesScreen(){
             for(user in users){
                 Box(
                     modifier = Modifier
-                        .size(350.dp, 110.dp)
+                        .size(350.dp, 105.dp)
                         .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
-//                    contentAlignment = Alignment.Center
                 ) {
                     Column {
+                        //user name
                         Text(
                             text = user.name,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                            modifier = Modifier.padding(start = 15.dp, top = 15.dp)
                         )
+                        //user role
                         Text(
                             text = "Role: ${user.userType()}",
                             fontSize = 15.sp,
-                            modifier = Modifier.padding(horizontal = 14.dp)
+                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
                         )
+                    }
 
-                        //TODO: add policy violations
+                    //TODO: add violation status
 
-                        Row {
-                            Text(
-                                //TODO: make "View Details" work
-                                //TODO: lead to opening the details page
-                                text = "View Profile >>",
-                                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 15.dp),
-                                color = Color(0xFF324CA8)
-                            )
-                            Button(
-                                onClick = { println("Remove button clicked") },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red,
-                                    contentColor = Color.White
-                                ),
-                                modifier = Modifier.padding(start = 115.dp),
-                            ) {
-                                Text(text = "Remove")
-                            }
-                        }
-
+                    //view details
+                    Text(
+                        //TODO: make "View Details" work
+                        //TODO: lead to opening the details page
+                        text = "View Details >>",
+                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 15.dp, bottom = 5.dp),
+                        color = Color(0xFF324CA8)
+                    )
+                    //remove button
+                    Button(
+                        //TODO: Make Remove button work
+                        onClick = { println("Remove button clicked") },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .padding(end = 12.dp, bottom = 5.dp)
+                            .align(Alignment.BottomEnd)
+                    ) {
+                        Text(text = "Remove")
                     }
                 }//end box
                 Spacer(modifier = Modifier.height(10.dp))
             }//end loop
         }
     }
-}
-
-@Preview(name = "Admin Profiles Preview", showBackground = true)
-@Composable
-fun AdminProfilesPreview() {
-    AdminBrowseProfilesScreen()
 }
