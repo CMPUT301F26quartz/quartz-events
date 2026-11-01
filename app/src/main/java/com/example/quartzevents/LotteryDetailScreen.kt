@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +33,8 @@ fun LotteryDetailScreen (
     lottery: Lottery,
     campsite: String = "Pine Ridge"
 ){
+    val months: MutableMap<Int, String> = mutableMapOf(
+        Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec") )
     Column(
         modifier = Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.secondary)
@@ -91,28 +95,128 @@ fun LotteryDetailScreen (
                 Text(
                     "Status: "+status,
                     fontSize = 20.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    itemsIndexed(temp_Lottery_list) { index, lottery ->
-                        CampsiteLotteryDisplay(
-                            modifier = Modifier,
-                            lottery = lottery,
-                            onClick = {
+                Text(
+                    "Included Campsites ("+lottery.campsites.size+")",
+                    fontSize = 23.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
-                            }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(top = 5.dp)
+                ) {
+                    itemsIndexed(lottery.campsites) { index, campsite ->
+                        CampDisplay(
+                            modifier = Modifier,
+                            campsite = campsite
                         )
-                        if (index < temp_Lottery_list.lastIndex) {
+                        if (index < lottery.campsites.lastIndex) {
                             HorizontalDivider()
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
+                Text(
+                    "Registration Period",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Box(
+                    modifier = Modifier
+                        .size(350.dp,50.dp)
+                        .padding(top = 5.dp)
+                        .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
+                ){
+                    var regDates: String = ""
+                    regDates += "Registration: " + months.get(
+                        lottery.registrationStart.date.slice(5..6).toInt()
+                    ) + " " + lottery.registrationStart.date.slice(8..lottery.registrationStart.date.length - 1)
+                        .toInt().toString() + " - " + months.get(
+                        lottery.registrationEnd.date.slice(5..6).toInt()
+                    ) + " " + lottery.registrationEnd.date.slice(8..lottery.registrationEnd.date.length - 1)
+                        .toInt().toString() + ", " + lottery.registrationEnd.date.slice(0..3)
+                    Text(
+                        regDates,
+                        fontSize = 20.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                Spacer(modifier = Modifier.padding(top = 15.dp))
+
+                Text(
+                    "Booking Period",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Box(
+                    modifier = Modifier
+                        .size(350.dp,50.dp)
+                        .padding(top = 5.dp)
+                        .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
+                ){
+                    var bookDates: String = ""
+                    bookDates += "Registration: " + months.get(
+                        lottery.bookingStart.date.slice(5..6).toInt()
+                    ) + " " + lottery.bookingStart.date.slice(8..lottery.bookingStart.date.length - 1)
+                        .toInt().toString() + " - " + months.get(
+                        lottery.bookingEnd.date.slice(5..6).toInt()
+                    ) + " " + lottery.bookingEnd.date.slice(8..lottery.bookingEnd.date.length - 1)
+                        .toInt().toString() + ", " + lottery.bookingEnd.date.slice(0..3)
+                    Text(
+                        bookDates,
+                        fontSize = 20.sp,
+                        color = Color.Gray
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun CampDisplay(
+    modifier: Modifier,
+    campsite: Campsite
+) {
+    Box (
+        modifier = Modifier
+            .size(350.dp,65.dp)
+            .background(color = Color.LightGray, shape = RoundedCornerShape(20.dp))
+    ) {
+        Row (
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                Text(
+                   campsite.name,
+                    fontSize = 23.sp,
+                    color = Color.DarkGray
+                )
+
+                Spacer(modifier = Modifier.padding(top = 5.dp))
+
+                Text(
+                    campsite.location,
+                    fontSize = 18.sp,
+                    color = Color.Gray
+                )
+            }
+            Icon(
+                painter = painterResource(R.drawable.chevron_right),
+                contentDescription = "arrow icon",
+                modifier = Modifier.padding(start = 5.dp),
+                tint = Color.Gray
+            )
         }
     }
 }
