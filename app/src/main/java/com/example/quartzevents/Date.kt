@@ -4,7 +4,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
 class Date(val date: String) {
-
+//yyyy-mm-dd
     fun dateStr(): String{
         return date
     }
