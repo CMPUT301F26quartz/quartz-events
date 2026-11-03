@@ -20,6 +20,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,12 +29,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun LotteryDetailScreen (
     lottery: Lottery,
-    campsite: String = "Pine Ridge"
+    campsite: String
 ){
+    var back_b by remember {mutableStateOf(false)}
+    var next_screen by remember {mutableStateOf(false)}
     val months: MutableMap<Int, String> = mutableMapOf(
         Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec") )
     Column(
@@ -49,7 +55,7 @@ fun LotteryDetailScreen (
             IconButton(
                 modifier = Modifier.padding(start = 15.dp),
                 onClick = {
-                    // Back to previous screen
+                    back_b = true
                 }
             ){
                 Icon(
@@ -57,6 +63,10 @@ fun LotteryDetailScreen (
                     contentDescription = "Back Button",
                     tint = MaterialTheme.colorScheme.secondary
                 )
+            }
+
+            if(back_b){
+                ActiveLotteriesScreen(campsite)
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
