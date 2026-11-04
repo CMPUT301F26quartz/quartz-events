@@ -86,15 +86,22 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
         )
         Spacer(modifier = Modifier.height(10.dp))
 
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
+        Column(
+            modifier = Modifier.fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-//            for(campsite in campsites){
-            items(campsites){ campsite ->
+            for(campsite in campsites){
+//            items(campsites){ campsite ->
                 //finding campsite owner
-                //TODO: find campsite owner
+                var ownerName:String? = null
+                for(owner in owners){
+                    if(owner.uid == campsite.ownerId){
+                        ownerName = owner.name
+                    }
+                }
 
+                //drawing one box for the campsite's data to be written in
                 Box(
                     modifier = Modifier
                         .size(350.dp, 105.dp)
@@ -117,7 +124,7 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
                             )
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "Owner:",
+                                text = "Owner: $ownerName",
                                 fontSize = 15.sp,
                                 modifier = Modifier.padding(start = 15.dp, top = 5.dp)
                             )
