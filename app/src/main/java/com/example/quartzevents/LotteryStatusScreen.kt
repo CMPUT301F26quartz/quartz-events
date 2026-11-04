@@ -1,5 +1,6 @@
 package com.example.quartzevents
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,10 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,17 +27,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.Instant
+import androidx.compose.material3.OutlinedButton
 
 @Composable
 fun LotteryStatusScreen (
+    onDeleteEntrant: (Lottery, Entrant) -> Unit,
+    lotteries: List<Lottery>,
     lottery: Lottery,
     campsite: String
 ){
     var back_b by remember {mutableStateOf(false)}
-    var next_screen by remember {mutableStateOf(false)}
     val months: MutableMap<Int, String> = mutableMapOf(
         Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec") )
     Column(
@@ -67,7 +67,7 @@ fun LotteryStatusScreen (
             }
 
             if(back_b){
-                LotteryDetailScreen(lottery,campsite)
+                LotteryDetailScreen({Lottery, Entrant -> Unit},lotteries,lottery,campsite)
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -79,141 +79,20 @@ fun LotteryStatusScreen (
                 color = MaterialTheme.colorScheme.secondary
             )
         }
-        Spacer(modifier = Modifier.padding(top = 25.dp))
+        Spacer(modifier = Modifier.padding(top = 5.dp))
 
         Text(
             "My Lottery Entry",
             fontSize = 24.sp,
             color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(20.dp)
         )
-
-        Spacer(modifier = Modifier.padding(top = 10.dp))
 
         Box(
             modifier = Modifier
-                .size(350.dp,100.dp)
-                .background(color = Color.LightGray,shape = RoundedCornerShape(20.dp))
-        ) {
-            Column(
-                modifier = Modifier.fillMaxHeight().padding(10.dp)
-            ) {
-                Text(
-                    lottery.name,
-                    fontSize = 18.sp,
-                    color = Color.DarkGray,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.padding(top = 5.dp))
-
-                var sites = ""
-                var i = 0
-                for (i in 0..<(lottery.campsites.size-1)) {
-                   sites += lottery.campsites[i].location+" / "
-                }
-                sites += lottery.campsites[lottery.campsites.size-1].location
-
-                Text(
-                    sites,
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-
-                Box (
-                    modifier = Modifier
-                        .size(70.dp,15.dp)
-                        .padding(5.dp)
-                        .background(Color(0xFFBAFCA4))
-                ) {
-                    Text(
-                        "Joined Waiting List",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Spacer(modifier = Modifier.padding(14.dp))
-
-                    Text(
-                        "Draw Date: "+months.get(
-                            lottery.registrationEnd.date.slice(5..6).toInt()
-                        ) + " " + lottery.registrationEnd.date.slice(8..lottery.registrationEnd.date.length - 1)
-                            .toInt().toString() + ", " + lottery.registrationEnd.date.slice(0..3),
-                        fontSize = 14.sp,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-            }
-        }
-    }
-}
-
-
-
-@Preview
-@Composable
-fun PreviewLotteryStatusScreen (
-    lottery: Lottery = Lottery(mutableListOf(Campsite("camp","AB")), "test", Date("2026-07-20"),Date("2026-08-09"),Date("2027-03-02"),Date("2027-04-09"),100),
-    campsite: String = "camp"
-){
-    var back_b by remember {mutableStateOf(false)}
-    var next_screen by remember {mutableStateOf(false)}
-    val months: MutableMap<Int, String> = mutableMapOf(
-        Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec") )
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .background(MaterialTheme.colorScheme.secondary)
-    ){
-        Row (
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Bottom,
-            modifier = Modifier.fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(vertical = 45.dp)
-        ){
-            IconButton(
-                modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    back_b = true
-                }
-            ){
-                Icon(
-                    painter = painterResource(R.drawable.arrow_back_24px),
-                    contentDescription = "Back Button",
-                    tint = MaterialTheme.colorScheme.secondary
-                )
-            }
-
-            if(back_b){
-                LotteryDetailScreen(lottery,campsite)
-            }
-
-            Spacer(modifier = Modifier.padding(15.dp))
-
-            Text(
-                "Lottery Status",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary
-            )
-        }
-        Spacer(modifier = Modifier.padding(top = 25.dp))
-
-        Text(
-            "My Lottery Entry",
-            fontSize = 24.sp,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.padding(top = 10.dp))
-
-        Box(
-            modifier = Modifier
-                .size(350.dp,100.dp)
+                .size(350.dp,150.dp)
+                .padding(start = 20.dp)
                 .background(color = Color.LightGray,shape = RoundedCornerShape(20.dp))
         ) {
             Column(
@@ -238,35 +117,123 @@ fun PreviewLotteryStatusScreen (
                 Text(
                     sites,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 10.dp)
                 )
 
                 Box (
                     modifier = Modifier
-                        .size(70.dp,15.dp)
+                        .size(140.dp,40.dp)
                         .padding(5.dp)
-                        .background(Color(0xFFBAFCA4))
+                        .background(Color(0xFFBAFCA4), shape = RoundedCornerShape(20.dp))
                 ) {
                     Text(
                         "Joined Waiting List",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(5.dp)
                     )
 
-                    Spacer(modifier = Modifier.padding(14.dp))
 
-                    Text(
-                        "Draw Date: "+months.get(
-                            lottery.registrationEnd.date.slice(5..6).toInt()
-                        ) + " " + lottery.registrationEnd.date.slice(8..lottery.registrationEnd.date.length - 1)
-                            .toInt().toString() + ", " + lottery.registrationEnd.date.slice(0..3),
-                        fontSize = 14.sp,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.SemiBold
-                    )
                 }
 
+                Text(
+                    "Draw Date: "+months.get(
+                        lottery.registrationEnd.dateStr().slice(5..6).toInt()
+                    ) + " " + lottery.registrationEnd.dateStr().slice(8..lottery.registrationEnd.dateStr().length - 1)
+                        .toInt().toString() + ", " + lottery.registrationEnd.dateStr().slice(0..3),
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        Text(
+            "Entry Details",
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 20.dp, top = 25.dp)
+        )
+
+        val instant = Instant.now()
+        val currentTime = Date(instant.toString())
+        if(lottery.registrationEnd.isEqual(currentTime) or lottery.registrationEnd.isAfter(currentTime)) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Entry Status",
+                    fontSize = 18.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(20.dp)
+                )
+
+                Spacer(modifier = Modifier.padding(start = 160.dp))
+
+                Text(
+                    "Waiting",
+                    fontSize = 18.sp,
+                    color = Color.DarkGray,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 20.dp)
+                )
+            }
+            Text(
+                "You Will be Notified When the Lottery Ends.",
+                fontSize = 17.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(start = 40.dp, top = 10.dp)
+            )
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Entry Status",
+                    fontSize = 18.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(20.dp)
+                )
+
+                Spacer(modifier = Modifier.padding(80.dp))
+
+                Text(
+                    "Finished",
+                    fontSize = 18.sp,
+                    color = Color.DarkGray,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 20.dp)
+                )
+            }
+            Text(
+                "Check Your Notifications to See if You Have Won.",
+                fontSize = 17.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(start = 40.dp, top = 10.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.padding(50.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            OutlinedButton(
+                onClick = {
+
+                },
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            ) {
+                Text(
+                    "Leave Waiting List",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }

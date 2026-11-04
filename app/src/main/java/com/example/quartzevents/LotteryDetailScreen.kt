@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +36,8 @@ import androidx.compose.runtime.setValue
 
 @Composable
 fun LotteryDetailScreen (
+    onAddEntrant: (Lottery, Entrant) -> Unit,
+    lotteries: List<Lottery>,
     lottery: Lottery,
     campsite: String
 ){
@@ -66,7 +70,7 @@ fun LotteryDetailScreen (
             }
 
             if(back_b){
-                ActiveLotteriesScreen(campsite)
+                ActiveLotteriesScreen(lotteries,campsite)
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -78,8 +82,6 @@ fun LotteryDetailScreen (
                 color = MaterialTheme.colorScheme.secondary
             )
         }
-        val temp_sites1: MutableList<Campsite> = mutableListOf(Campsite("Pine Ridge","Hinton, Alberta"), Campsite("Cedar Creek", "Edmonton Area, Alberta"))
-        val temp_Lottery_list: MutableList<Lottery> = mutableListOf(Lottery(temp_sites1,"Summer Camping Lottery",Date("2026-10-20"),Date("2026-11-10"),Date("2027-06-01"),Date("2027-06-30")))
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -146,12 +148,12 @@ fun LotteryDetailScreen (
                 ){
                     var regDates: String = ""
                     regDates += "Registration: " + months.get(
-                        lottery.registrationStart.date.slice(5..6).toInt()
-                    ) + " " + lottery.registrationStart.date.slice(8..lottery.registrationStart.date.length - 1)
+                        lottery.registrationStart.dateStr().slice(5..6).toInt()
+                    ) + " " + lottery.registrationStart.dateStr().slice(8..lottery.registrationStart.dateStr().length - 1)
                         .toInt().toString() + " - " + months.get(
-                        lottery.registrationEnd.date.slice(5..6).toInt()
-                    ) + " " + lottery.registrationEnd.date.slice(8..lottery.registrationEnd.date.length - 1)
-                        .toInt().toString() + ", " + lottery.registrationEnd.date.slice(0..3)
+                        lottery.registrationEnd.dateStr().slice(5..6).toInt()
+                    ) + " " + lottery.registrationEnd.dateStr().slice(8..lottery.registrationEnd.dateStr().length - 1)
+                        .toInt().toString() + ", " + lottery.registrationEnd.dateStr().slice(0..3)
                     Text(
                         regDates,
                         fontSize = 20.sp,
@@ -174,17 +176,40 @@ fun LotteryDetailScreen (
                 ){
                     var bookDates: String = ""
                     bookDates += "Registration: " + months.get(
-                        lottery.bookingStart.date.slice(5..6).toInt()
-                    ) + " " + lottery.bookingStart.date.slice(8..lottery.bookingStart.date.length - 1)
+                        lottery.bookingStart.dateStr().slice(5..6).toInt()
+                    ) + " " + lottery.bookingStart.dateStr().slice(8..lottery.bookingStart.dateStr().length - 1)
                         .toInt().toString() + " - " + months.get(
-                        lottery.bookingEnd.date.slice(5..6).toInt()
-                    ) + " " + lottery.bookingEnd.date.slice(8..lottery.bookingEnd.date.length - 1)
-                        .toInt().toString() + ", " + lottery.bookingEnd.date.slice(0..3)
+                        lottery.bookingEnd.dateStr().slice(5..6).toInt()
+                    ) + " " + lottery.bookingEnd.dateStr().slice(8..lottery.bookingEnd.dateStr().length - 1)
+                        .toInt().toString() + ", " + lottery.bookingEnd.dateStr().slice(0..3)
                     Text(
                         bookDates,
                         fontSize = 20.sp,
                         color = Color.Gray
                     )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Button(
+                        onClick = {
+                            next_screen = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            "Join Waiting List",
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    if (next_screen) {
+                        LotteryStatusScreen({Lottery, Entrant -> Unit},lotteries,lottery,campsite)
+                    }
                 }
             }
         }

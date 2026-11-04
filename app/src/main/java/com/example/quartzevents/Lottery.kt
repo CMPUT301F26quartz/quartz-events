@@ -2,9 +2,18 @@ package com.example.quartzevents
 
 import kotlin.to
 
-class Lottery(val campsites: MutableList<Campsite>, val name: String,  var registrationStart: Date, var registrationEnd: Date, var bookingStart: Date, var bookingEnd: Date, var capacity:Int?=null) {
+class Lottery(
+    val campsites: MutableList<Campsite>,
+    val name: String,
+    var registrationStart: Date,
+    var registrationEnd: Date,
+    var bookingStart: Date,
+    var bookingEnd: Date,
+    var capacity:Int?=null,
+    val id: String,
+    val entrants: MutableList<Entrant>
+) {
 
-    val entrants: MutableList<Entrant> = mutableListOf()
 
     fun add_contestant(contestant: Entrant){
         entrants.add(contestant)
