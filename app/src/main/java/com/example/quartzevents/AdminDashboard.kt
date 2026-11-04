@@ -42,7 +42,7 @@ fun AdminDashboardScreen(){
     var openImages by remember { mutableStateOf(false) }
     var openActivityLog by remember { mutableStateOf(false) }
 
-    
+    //TODO: add redirections to other screens
     if(openCampsites){AdminBrowseCampsitesScreen({openCampsites=false})}
     else if(openProfiles){AdminBrowseProfilesScreen({openProfiles=false})}
 
@@ -159,6 +159,7 @@ fun AdminDashboardScreen(){
                     modifier = Modifier
                         .size(350.dp, 80.dp)
                         .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
+                        //TODO: make clickable lead to manage images
                         .clickable { println("Images Box Clicked") }
                 ) {
                     //Image Icon
@@ -192,6 +193,7 @@ fun AdminDashboardScreen(){
                     modifier = Modifier
                         .size(350.dp, 80.dp)
                         .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
+                        //TODO: make cickable lead to activity log
                         .clickable { println("Activity Logs Box Clicked") }
                 ) {
                     //List Icon

@@ -1,25 +1,30 @@
 package com.example.quartzevents
 
-import androidx.compose.animation.core.snap
+import androidx.compose.runtime.mutableStateListOf
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
-object CampsiteRepository {
-    private val _campsites = MutableStateFlow<List<Campsite>>(emptyList())
-    val allCampsites: StateFlow<List<Campsite>> = _campsites.asStateFlow()
+class CampsiteRepository {
+    private val _campsites = mutableStateListOf<Campsite>()
+    val campsites: List<Campsite>
+        get()=_campsites
 
-    fun update(){
+    init{
         Firebase.firestore.collection("campsites")
             .addSnapshotListener {
                 snapshot, error ->  if(error!=null || snapshot==null){
                     return@addSnapshotListener
                 }
-                else{
-                    _campsites.value = snapshot?.toObjects(Campsite::class.java)!!
+
+                _campsites.clear()
+
+                snapshot?.documents?.forEach {document ->
+                    val campsite = document.toObject(Campsite::class.java)
+                    if(campsite!=null){
+                        _campsites.add(campsite)
+                    }
                 }
             }
     }
+
 }
