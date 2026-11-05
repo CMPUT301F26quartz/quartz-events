@@ -41,7 +41,7 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F6ED))
-            .verticalScroll(rememberScrollState())
+//            .verticalScroll(rememberScrollState())
             .safeDrawingPadding()
             .imePadding(),
     ){

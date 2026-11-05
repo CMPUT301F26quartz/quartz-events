@@ -82,65 +82,65 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
         Spacer(modifier = Modifier.height(10.dp))
 
 
-        //for preview purposes
-        val users: List<User> = listOf(Entrant("email1", "Name 1", "pass1"), Owner("email2", "Name 2", "pass2"))
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            for(user in users){
-                Box(
-                    modifier = Modifier
-                        .size(350.dp, 105.dp)
-                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
-                ) {
-                    Column {
-                        //user name
-                        Text(
-                            text = user.name,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            modifier = Modifier.padding(start = 15.dp, top = 15.dp)
-                        )
-                        //user role
-                        Text(
-                            text = "Role: ${user.userType()}",
-                            fontSize = 15.sp,
-                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
-                        )
-                    }
-
-                    //TODO: add violation status
-
-                    //view details
-                    Text(
-                        //TODO: make "View Details" work
-                        //TODO: lead to opening the details page
-                        text = "View Details >>",
-                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 15.dp, bottom = 5.dp),
-                        color = Color(0xFF324CA8)
-                    )
-                    //remove button
-                    Button(
-                        //TODO: Make Remove button work
-                        onClick = { println("Remove button clicked") },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red,
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier
-                            .padding(end = 12.dp, bottom = 5.dp)
-                            .align(Alignment.BottomEnd)
-                    ) {
-                        Text(text = "Remove")
-                    }
-                }//end box
-                Spacer(modifier = Modifier.height(10.dp))
-            }//end loop
-        }
+//        //for preview purposes
+//        val users: List<User> = listOf(Entrant("email1", "Name 1", "pass1"), Owner("email2", "Name 2", "pass2"))
+//        Column(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalAlignment = Alignment.CenterHorizontally
+//        ) {
+//            for(user in users){
+//                Box(
+//                    modifier = Modifier
+//                        .size(350.dp, 105.dp)
+//                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
+//                ) {
+//                    Column {
+//                        //user name
+//                        Text(
+//                            text = user.name,
+//                            fontWeight = FontWeight.Bold,
+//                            fontSize = 20.sp,
+//                            modifier = Modifier.padding(start = 15.dp, top = 15.dp)
+//                        )
+//                        //user role
+//                        Text(
+//                            text = "Role: ${user.userType()}",
+//                            fontSize = 15.sp,
+//                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
+//                        )
+//                    }
+//
+//                    //TODO: add violation status
+//
+//                    //view details
+//                    Text(
+//                        //TODO: make "View Details" work
+//                        //TODO: lead to opening the details page
+//                        text = "View Details >>",
+//                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+//                        fontWeight = FontWeight.Bold,
+//                        modifier = Modifier
+//                            .align(Alignment.BottomStart)
+//                            .padding(start = 15.dp, bottom = 5.dp),
+//                        color = Color(0xFF324CA8)
+//                    )
+//                    //remove button
+//                    Button(
+//                        //TODO: Make Remove button work
+//                        onClick = { println("Remove button clicked") },
+//                        colors = ButtonDefaults.buttonColors(
+//                            containerColor = Color.Red,
+//                            contentColor = Color.White
+//                        ),
+//                        modifier = Modifier
+//                            .padding(end = 12.dp, bottom = 5.dp)
+//                            .align(Alignment.BottomEnd)
+//                    ) {
+//                        Text(text = "Remove")
+//                    }
+//                }//end box
+//                Spacer(modifier = Modifier.height(10.dp))
+//            }//end loop
+//        }
     }
 }

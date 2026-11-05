@@ -33,7 +33,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             QuartzEventsTheme {
-                QuartzEventsApp()
+//                QuartzEventsApp()
+                AdminDashboardScreen()
             }
         }
     }
