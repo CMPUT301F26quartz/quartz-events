@@ -107,7 +107,6 @@ fun ActiveLotteriesScreen(
                 ) {
                     itemsIndexed(lotteries) { index, lottery ->
                         CampsiteLotteryDisplay( // call composable function that builds each lottery display
-                            modifier = Modifier,
                             lottery = lottery,
                             onClick = {
                                 next_screen = true
@@ -127,12 +126,11 @@ fun ActiveLotteriesScreen(
 }
 
 @Composable
-fun CampsiteLotteryDisplay (
-    modifier: Modifier,
+fun CampsiteLotteryDisplay ( // Framework for the Box displays of Lottery Info
     lottery: Lottery,
     onClick: () -> Unit
 ){
-    val months: MutableMap<Int, String> = mutableMapOf(
+    val months: MutableMap<Int, String> = mutableMapOf( // For use in converting Dates to more readable forms
         Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec")
     )
     Box(
@@ -163,7 +161,7 @@ fun CampsiteLotteryDisplay (
                 lottery.campsites.forEach { site ->
                     sites += site.name + "  "
                 }
-                if (lottery.entrants.size == lottery.capacity) {
+                if (lottery.entrants.size == lottery.capacity) { // Show unavailable if the lottery capacity is hit
                     status = "Unavailable Currently"
                 } else {
                     status = "Open for Entry"
@@ -180,7 +178,7 @@ fun CampsiteLotteryDisplay (
                     color = Color.Gray
                 )
                 var regDates: String = ""
-                regDates += "Registration: " + months.get(
+                regDates += "Registration: " + months.get( // puts Registration dates into a "Month day - Month day, year" format
                     lottery.registrationStart.date.slice(5..6).toInt()
                 ) + " " + lottery.registrationStart.date.slice(8..lottery.registrationStart.date.length - 1)
                     .toInt().toString() + " - " + months.get(
@@ -194,7 +192,7 @@ fun CampsiteLotteryDisplay (
                 )
 
             }
-            Icon(
+            Icon( // Create arrow icon
                 painter = painterResource(R.drawable.chevron_right),
                 contentDescription = "arrow icon",
                 modifier = Modifier.padding(start = 5.dp),
