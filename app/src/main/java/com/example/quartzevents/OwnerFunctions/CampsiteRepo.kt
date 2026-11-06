@@ -1,7 +1,7 @@
 package com.example.quartzevents.OwnerFunctions
 
 
-import com.example.quartzevents.OwnerFunctions.Campsite
+import com.example.quartzevents.Campsite
 import com.google.firebase.firestore.FirebaseFirestore
 
 

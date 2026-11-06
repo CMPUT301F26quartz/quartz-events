@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 
-import com.example.quartzevents.OwnerFunctions.Campsite
+import com.example.quartzevents.Campsite
 import com.example.quartzevents.OwnerFunctions.CampsiteRepository
 
 

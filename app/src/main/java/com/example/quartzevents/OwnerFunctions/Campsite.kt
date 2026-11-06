@@ -1,5 +1,5 @@
 // Template for adding campsite
-package com.example.quartzevents.OwnerFunctions
+package com.example.quartzevents
 
 
 data class Campsite(
@@ -11,4 +11,11 @@ data class Campsite(
     val maxOccupancy: String = "",
     val imageUrl: String = "",
     val tags: String = "",
-)
+){
+    var reservations: MutableList<Reservation> = mutableListOf()
+
+    fun addReservation(new: Reservation){
+        reservations.add(new)
+    }
+}
+

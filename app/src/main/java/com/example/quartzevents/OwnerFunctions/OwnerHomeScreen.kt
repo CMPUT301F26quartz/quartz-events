@@ -22,7 +22,7 @@ import com.example.quartzevents.model.UserProfile
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.quartzevents.OwnerFunctions.CampsiteRepository
-import com.example.quartzevents.OwnerFunctions.Campsite
+import com.example.quartzevents.Campsite
 
 
 
