@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 
 @Composable
 fun AdminDashboardScreen(onLogout: () -> Unit){
@@ -93,7 +94,8 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
                     modifier = Modifier
                         .padding(end = 15.dp, top = 15.dp)
                         .align(Alignment.TopEnd)
-                        .clickable(onClick = onLogout),
+                        .clickable(onClick = onLogout)
+                        .testTag("AdminLogOut"),
                     fontSize = 15.sp,
                     color = Color.White
                 )
@@ -121,6 +123,7 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
                         .size(350.dp, 80.dp)
                         .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
                         .clickable { openCampsites = true }
+                        .testTag("Manage Campsites Box")
                 ) {
                     //Campsites Icon
                     Image(
@@ -154,6 +157,7 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
                         .size(350.dp, 80.dp)
                         .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
                         .clickable { openProfiles = true }
+                        .testTag("Manage Profiles Box")
                 ) {
                     //Profile Icons
                     Image(
