@@ -52,6 +52,16 @@ fun QuartzEventsApp() {
         mutableStateOf(false)
     }
 
+    // tracks which profile-related screen is currently displayed.
+    var profileScreen by rememberSaveable {
+        mutableStateOf("home")
+    }
+
+    // Temporary notification state until user preferences are integrated
+    var notificationsEnabled by rememberSaveable {
+        mutableStateOf(true)
+    }
+
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
         val uid = repository.getCurrentUserId()
@@ -93,6 +103,40 @@ fun QuartzEventsApp() {
             )
         }
 
+        currentProfile?.role == "entrant" && profileScreen == "profile" -> {
+            ProfileScreen(
+                profile = currentProfile!!,
+                enableNotification = notificationsEnabled,
+                onNotificationsChanged = { enabled ->
+                    notificationsEnabled = enabled
+                },
+                onEditProfile = { profileScreen = "edit_profile" },
+                onViewPolicies = { profileScreen = "policies" },
+                onDeleteProfile = { }, // TODO: connect DeleteProfileScreen Later
+                onBack = { profileScreen = "home" }
+            )
+        }
+
+        currentProfile?.role == "entrant" && profileScreen == "policies" -> {
+            PoliciesScreen(
+                onBack = {
+                    profileScreen = "profile"
+                }
+            )
+        }
+
+        currentProfile?.role == "entrant" && profileScreen == "edit_profile" -> {
+            EditProfileScreen(
+                profile = currentProfile!!,
+                onBack = { profileScreen = "profile" },
+                onSave = { updatedProfile ->
+                    // TODO: save updated profile to Firebase
+                    currentProfile = updatedProfile
+                    profileScreen = "profile"
+                }
+            )
+        }
+
         currentProfile?.role == "admin" -> {
             AdminDashboardScreen(onLogout = {
                 repository.logout()
@@ -108,9 +152,13 @@ fun QuartzEventsApp() {
                 onSearch = {
                     isSearchScreenVisible = true
                 },
+                onProfile = {
+                    profileScreen = "profile"
+                },
                 onLogout = {
                     repository.logout()
                     isSearchScreenVisible = false
+                    profileScreen = "home"
                     currentProfile = null
                 }
             )
@@ -122,6 +170,7 @@ fun QuartzEventsApp() {
 fun RoleHomeScreen(
     profile: UserProfile,
     onSearch: () -> Unit,
+    onProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     if (profile.role == "entrant") {
