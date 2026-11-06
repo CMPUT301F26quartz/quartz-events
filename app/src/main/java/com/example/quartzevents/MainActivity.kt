@@ -17,7 +17,11 @@ import com.example.quartzevents.model.UserProfile
 import com.example.quartzevents.ui.theme.QuartzEventsTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Color
+
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
+import com.example.quartzevents.OwnerFunctions.RegisterCampsite
+import com.example.quartzevents.OwnerFunctions.CampsiteDetails
 
 
 class MainActivity : ComponentActivity() {
@@ -34,7 +38,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             QuartzEventsTheme {
                 QuartzEventsApp()
-
+//                AdminDashboardScreen()
             }
         }
     }
@@ -49,10 +53,13 @@ fun QuartzEventsApp() {
     var isLoading by remember {
         mutableStateOf(true)
     }
-    // TODO: Replace with shared navigation when the dashboard is ready.
     var isSearchScreenVisible by rememberSaveable {
         mutableStateOf(false)
     }
+    var isCreatingCampsite by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -95,27 +102,48 @@ fun QuartzEventsApp() {
             )
         }
 
-        currentProfile?.role == "admin" -> {
-            AdminDashboardScreen(onLogout = {
-                repository.logout()
-                currentProfile = null
-            })
-        }
-
 
         // Show screen based on user role
-        else-> {
-            RoleHomeScreen(
-                profile = currentProfile!!,
-                onSearch = {
-                    isSearchScreenVisible = true
-                },
-                onLogout = {
-                    repository.logout()
-                    isSearchScreenVisible = false
-                    currentProfile = null
+        //main owner switchboard
+        else -> {
+            if (currentProfile?.role == "owner") {
+
+                if (selectedCampsiteId != null) {
+                    CampsiteDetails(
+                        campsiteId = selectedCampsiteId!!,
+                        onBack = { selectedCampsiteId = null }
+                    )
+                } else if (isCreatingCampsite) {
+                    RegisterCampsite(
+                        onBack = { isCreatingCampsite = false },
+                        onSaveSuccess = { isCreatingCampsite = false }
+                    )
+                } else {
+                    OwnerHomeScreen(
+                        profile = currentProfile!!,
+                        onAddCampsiteClick = { isCreatingCampsite = true },
+                        onViewDetailsClick = { id -> selectedCampsiteId = id },
+                        onLogout = {
+                            repository.logout()
+                            currentProfile = null
+                        }
+                    )
                 }
-            )
+
+            } else {
+
+                RoleHomeScreen(
+                    profile = currentProfile!!,
+                    onSearch = {
+                        isSearchScreenVisible = true
+                    },
+                    onLogout = {
+                        repository.logout()
+                        isSearchScreenVisible = false
+                        currentProfile = null
+                    }
+                )
+            }
         }
     }
 }
@@ -126,11 +154,6 @@ fun RoleHomeScreen(
     onSearch: () -> Unit,
     onLogout: () -> Unit
 ) {
-    if (profile.role == "entrant") {
-        EntrantHomeScreen(profile, onSearch, onLogout)
-        return
-    }
-
     val roleName = when (profile.role) {
         "entrant" -> "Entrant"
         "owner" -> "Campsite Owner"
@@ -152,7 +175,16 @@ fun RoleHomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (profile.role == "entrant") {
-            //SearchCampsitesButton(onClick = onSearch)
+            SearchCampsitesButton(onClick = onSearch)
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        else if(profile.role == "admin"){
+            //AdminDashboardScreen()
+        }
+
+        if (profile.role == "owner") {
+            SearchCampsitesButton(onClick = onSearch)
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -164,5 +196,23 @@ fun RoleHomeScreen(
         Button(onClick = onLogout) {
             Text("Log Out")
         }
+    }
+}
+// The future entrant dashboard can reuse this search entry.
+@Composable
+private fun SearchCampsitesButton(
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF254D3C),
+            contentColor = Color.White
+        )
+    ) {
+        Text(text = "Search Campsites")
     }
 }

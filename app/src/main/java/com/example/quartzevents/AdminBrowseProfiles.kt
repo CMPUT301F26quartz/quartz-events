@@ -1,4 +1,14 @@
-//TODO: add description
+/**
+ * Shows all user profiles, including the user's name and role, allows admin to remove a user
+ *
+ * Supported screens:
+ *  - profile details
+ *  - confirm remove user option (future implementation)
+ *
+ *  * @param back to support ability to return to the admin dashboard
+ *  * @return None
+ */
+
 
 package com.example.quartzevents
 
@@ -44,19 +54,6 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
             if (error != null) android.util.Log.e("Users", "Load failed: $error")
             else if (result != null) users = result
         }
-
-//        userRepository.getAllUsers() { result, error ->
-//            if (result != null) {
-//                users = result
-//            }
-//        }
-    }
-    //TODO: fix permissions for admin on firebase
-    if(users.isEmpty()){
-        println("EMPTY")
-    }
-    else{
-        println("NOT EMPTY")
     }
 
     Column(

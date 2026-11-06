@@ -1,5 +1,7 @@
 /**
  * The second of Two Screens used in the creation/reistration of new Lotteries
+ *
+ * Collects the rest of the necessary information to create the lottery
  */
 package com.example.quartzevents
 
@@ -47,6 +49,17 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * Collects remaining lottery info necessary for creation of lottery via a series of text fields
+ *
+ * collects name, registrationStart, registrationEnd, bookingStart, bookingEnd, capacity, entrants, and winNum
+ * from text fields, and the "create new lottery" button calls a lambda function that creates the new lottery
+ *
+ * @property lotteries a list of Lottery objects to be passed to other functions
+ * @property campsites  a list of Campsite objects to be passed to other functions
+ * @property selectedSites a mutable list of Campsite objects for the new Lottery object
+ * @property onAddLottery a lambda function to be used in creation of the new Lottery object
+ */
 @Composable
 fun LotteryCreationScreen2(
     lotteries: List<Lottery>, // lotteries list - connects to db
