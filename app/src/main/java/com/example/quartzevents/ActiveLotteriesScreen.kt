@@ -54,7 +54,7 @@ fun ActiveLotteriesScreen(
                 .background(MaterialTheme.colorScheme.primary)
                 .padding(vertical = 45.dp)
         ){
-            IconButton( // back button
+            IconButton( // back button, referenced https://developer.android.com/develop/ui/compose/components/icon-button for implementation
                 modifier = Modifier.padding(start = 15.dp),
                 onClick = {
                     backB = true

@@ -2,6 +2,8 @@
  * The second of Two Screens used in the creation/reistration of new Lotteries
  *
  * Collects the rest of the necessary information to create the lottery
+ *
+ * Currently does not actually create the lottery in the database for an unknown reason
  */
 package com.example.quartzevents
 
@@ -77,7 +79,7 @@ fun LotteryCreationScreen2(
     var entrantsInput: MutableList<Entrant> = mutableListOf()
     var winnersInput by remember {mutableIntStateOf(0)}
     val dateFormat =
-        Regex("""^(19|20)\d{2}-(0[1-9]|1[0,1,2])-(0[1-9]|[12][0-9]|3[01])$""") // for checking if entered date is in the correct format
+        Regex("""^(\d{4})-(0[1-9]|1[0-2]|[1-9])-([1-9]|0[1-9]|[1-2]\d|3[0-1])$""") // for checking if entered date is in the correct format: from https://regex101.com/library/oE3yO7 and https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.text/-regex/
     val superscript = SpanStyle(
         baselineShift = BaselineShift.Superscript,
         fontSize = 16.sp,
@@ -172,7 +174,7 @@ fun LotteryCreationScreen2(
                     value = nameInput,
                     onValueChange = { nameInput = it },
                     singleLine = true,
-                    modifier = Modifier.size(320.dp, 30.dp)
+                    modifier = Modifier.size(320.dp, 40.dp)
                         .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                     label = { Text("Please Enter the Name of the Lottery", color = Color.Gray) }
                 )
@@ -228,7 +230,7 @@ fun LotteryCreationScreen2(
                         value = regStartInput,
                         onValueChange = { regStartInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 30.dp)
+                        modifier = Modifier.size(100.dp, 40.dp)
                             .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
@@ -236,7 +238,7 @@ fun LotteryCreationScreen2(
                         value = regEndInput,
                         onValueChange = { regEndInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 30.dp)
+                        modifier = Modifier.size(100.dp, 40.dp)
                             .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
@@ -292,7 +294,7 @@ fun LotteryCreationScreen2(
                         value = bookStartInput,
                         onValueChange = { bookStartInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 30.dp)
+                        modifier = Modifier.size(100.dp, 40.dp)
                             .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
@@ -300,7 +302,7 @@ fun LotteryCreationScreen2(
                         value = bookEndInput,
                         onValueChange = { bookEndInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 30.dp)
+                        modifier = Modifier.size(100.dp, 40.dp)
                             .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
@@ -325,7 +327,7 @@ fun LotteryCreationScreen2(
                     value = winnersInput.toString(),
                     onValueChange = { winnersInput = it.toInt() },
                     singleLine = true,
-                    modifier = Modifier.size(320.dp, 30.dp)
+                    modifier = Modifier.size(320.dp, 40.dp)
                         .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                     label = { Text("Please Enter the Number of Winners of the Lottery", color = Color.Gray) }
                 )
@@ -344,7 +346,7 @@ fun LotteryCreationScreen2(
                     value = capacityInput.toString(),
                     onValueChange = { capacityInput = it.toInt() },
                     singleLine = true,
-                    modifier = Modifier.size(320.dp, 30.dp)
+                    modifier = Modifier.size(320.dp, 40.dp)
                         .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                     label = { Text("Please Enter the Maximum Entrants into the Lottery, (or zero for unlimited)", color = Color.Gray) }
                 )

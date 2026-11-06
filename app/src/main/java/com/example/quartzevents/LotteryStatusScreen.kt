@@ -223,7 +223,7 @@ fun LotteryStatusScreen (
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
         ) {
-            OutlinedButton(
+            OutlinedButton( // referenced https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-outlined-button.html for implementation
                 onClick = {
                     onDeleteEntrant(lottery, user)
                 },

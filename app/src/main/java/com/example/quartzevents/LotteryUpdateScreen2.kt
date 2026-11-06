@@ -58,7 +58,7 @@ fun LotteryUpdateScreen2(
     var winnersInput by remember {mutableIntStateOf(0)}
     val dateFormat =
         Regex("""^(19|20)\d{2}-(0[1-9]|1[0,1,2])-(0[1-9]|[12][0-9]|3[01])$""") // for checking if entered date is in the correct format
-    val superscript = SpanStyle(
+    val superscript = SpanStyle( // referenced this article for superscript and annotated string implementation: https://stackoverflow.com/questions/59602862/how-we-can-we-format-text-as-superscript-or-subscript-in-android-jetpack-compose
         baselineShift = BaselineShift.Superscript,
         fontSize = 16.sp,
         color = Color.Red

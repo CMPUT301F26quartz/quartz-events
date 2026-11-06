@@ -23,8 +23,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.quartzevents.OwnerFunctions.CampsiteRepository
 import com.example.quartzevents.Campsite
-
-
+import com.example.quartzevents.Lottery
+import com.example.quartzevents.LotteryListCampsiteSelectScreen
+import com.example.quartzevents.LotteryRepository
 
 
 private val QuartzGreen = Color(0xFF254D3C)
@@ -40,18 +41,31 @@ fun OwnerHomeScreen (
     onLogout: () -> Unit) {
 
 
-    val repository = remember { CampsiteRepository() }
+    val campRepository = remember { CampsiteRepository() }
+    val lotRepository = remember { LotteryRepository() }
     var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
+    var lotteries by remember { mutableStateOf<List<Lottery>>(emptyList()) }
+
+    var lotScreen by remember { mutableStateOf(false) }
 
 
 
     LaunchedEffect(Unit) {
-        repository.getOwnerCampsites(profile.uid) { result, _ ->
+        campRepository.getOwnerCampsites(profile.uid) { result, _ ->
             if (result != null) {
                 campsites = result
             }
         }
     }
+
+    LaunchedEffect(Unit) {
+        lotRepository.getAllLotteries { result, _ ->
+            if (result != null) {
+                lotteries = result
+            }
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -67,8 +81,8 @@ fun OwnerHomeScreen (
             Text(
 
                 modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 24.dp),
+                    .align(Alignment.CenterStart)
+                    .padding(start = 24.dp),
                 text = "My campsites",
                 fontSize = 30.sp,
                 color = QuartzWhite,
@@ -76,9 +90,9 @@ fun OwnerHomeScreen (
                 fontWeight = FontWeight.Bold
 
 
-
             )
-            Button(onClick = onLogout,
+            Button(
+                onClick = onLogout,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 30.dp, end = 10.dp)
@@ -92,7 +106,11 @@ fun OwnerHomeScreen (
 
 
 
-        Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+        ) {
             Text(
                 fontSize = 22.sp,
                 text = "Your registered Campsites",
@@ -101,9 +119,11 @@ fun OwnerHomeScreen (
 
 
             )
-            Spacer(modifier = Modifier
-                .height(24.dp)
-                .padding(end = 30.dp))
+            Spacer(
+                modifier = Modifier
+                    .height(24.dp)
+                    .padding(end = 30.dp)
+            )
 
             Column(
                 modifier = Modifier
@@ -113,59 +133,83 @@ fun OwnerHomeScreen (
                     .padding(horizontal = 16.dp)
             ) {
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                for(campsite in campsites){
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
-                    ) {
-                        Column {
-                            Text(
-                                text = campsite.name,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-                            )
-                            Text(
-                                text = campsite.location,
-                                fontSize = 15.sp,
-                                modifier = Modifier.padding(horizontal = 14.dp)
-                            )
-                            Text(
-                                text = "Max guests: ${campsite.maxOccupancy}",
-                                fontSize = 15.sp,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
-                            )
-
-                            Row {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    for (campsite in campsites) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .background(
+                                    color = Color(0xFFD9D9D9),
+                                    shape = RoundedCornerShape(10.dp)
+                                ),
+                        ) {
+                            Column {
                                 Text(
-                                    text = "View Details →",
+                                    text = campsite.name,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier
-                                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                                        .clickable{
-                                            println(onViewDetailsClick(campsite.id))
-                                        },
-                                    color = Color(0xFF254D3C)
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.padding(
+                                        horizontal = 14.dp,
+                                        vertical = 10.dp
+                                    )
                                 )
+                                Text(
+                                    text = campsite.location,
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.padding(horizontal = 14.dp)
+                                )
+                                Text(
+                                    text = "Max guests: ${campsite.maxOccupancy}",
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                                )
+
+                                Row {
+                                    Text(
+                                        text = "View Details →",
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                                            .clickable {
+                                                println(onViewDetailsClick(campsite.id))
+                                            },
+                                        color = Color(0xFF254D3C)
+                                    )
+                                }
                             }
                         }
                     }
                 }
+
+                Button(
+                    onClick = onAddCampsiteClick,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 30.dp, end = 10.dp)
+                )
+                { Text("add campsite") }
+
+                Button(
+                    onClick = { lotScreen = true },
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 30.dp, end = 10.dp)
+                )
+                { Text("Lottery List") }
+
+
             }
-
-            Button(onClick = onAddCampsiteClick,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 30.dp, end = 10.dp))
-            {Text("add campsite")}
-
-
         }
     }
-}}
+    if (lotScreen == true) {
+        LotteryListCampsiteSelectScreen(
+            lotteries,
+            campsites,
+            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winners -> Unit },
+            { lotteries -> Unit })
+    }
+}

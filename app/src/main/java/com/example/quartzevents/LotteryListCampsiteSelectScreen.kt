@@ -151,7 +151,7 @@ fun LotteryListCampsiteSelectScreen(
                 }
 
                 LazyColumn( // List of available Lottery displays
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
                     itemsIndexed(campInfo) { index, siteInfo ->
                         CampsiteListing( // call composable function that builds each lottery display
@@ -229,12 +229,12 @@ fun LotteryListCampsiteSelectScreen(
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    if (creationScreen){
-                        LotteryCreationScreen1(lotteries, campsites, {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
-                    }
                 }
             }
         }
+    }
+    if (creationScreen){
+        LotteryCreationScreen1(lotteries, campsites, {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
     }
 }
 
@@ -272,7 +272,7 @@ fun CampsiteListing (
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        Checkbox(
+        Checkbox( // referenced https://developer.android.com/develop/ui/compose/components/checkbox for checkbox implementation
             checked = isChecked,
             onCheckedChange = {
                 if(selectedSite.id == "") {

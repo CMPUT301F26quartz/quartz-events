@@ -30,7 +30,7 @@ class LotteryRepository {
      * an exception message on failure
      */
     fun getAllLotteries(
-        onResult: (MutableList<Lottery>?, String?) -> Unit
+        onResult: (List<Lottery>?, String?) -> Unit
     ) {
         db.collection("campsites")
             .get()

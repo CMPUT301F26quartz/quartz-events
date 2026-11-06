@@ -76,21 +76,21 @@ fun LotteryCreationScreen1(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.secondary)
-    ){
-        Row (
+    ) {
+        Row(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Bottom,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.primary)
                 .padding(vertical = 45.dp)
-        ){
+        ) {
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
                 onClick = {
                     backB = true
                 }
-            ){
+            ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back_24px),
                     contentDescription = "Back Button",
@@ -99,7 +99,11 @@ fun LotteryCreationScreen1(
             }
 
             if (backB) {
-                LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit},{lottery -> Unit})
+                LotteryListCampsiteSelectScreen(
+                    lotteries,
+                    campsites,
+                    { campsites, name, regS, regE, bookS, bookE, cap, entrants, winners -> Unit },
+                    { lottery -> Unit })
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -129,19 +133,20 @@ fun LotteryCreationScreen1(
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
                 LazyColumn( // List of available Lottery displays
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
                     itemsIndexed(campsites) { index, site ->
                         SiteNameListing( // call composable function that builds each lottery display
                             site = site,
-                            onAddSite = {selectedSites.add(it)},
-                            onRemoveSite = {selectedSites.remove(it)}
+                            onAddSite = { selectedSites.add(it) },
+                            onRemoveSite = { selectedSites.remove(it) }
                         )
                         if (index < campsites.lastIndex) {
                             HorizontalDivider()
                         }
                     }
                 }
+
 
                     Button(
                         onClick = {
@@ -159,13 +164,13 @@ fun LotteryCreationScreen1(
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    if (nextScreen){
-                        LotteryCreationScreen2(lotteries,campsites,selectedSites,
-                            {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
-                    }
-                }
             }
         }
+    }
+    if (nextScreen){
+        LotteryCreationScreen2(lotteries,campsites,selectedSites,
+            {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
+    }
     }
 
 /**
