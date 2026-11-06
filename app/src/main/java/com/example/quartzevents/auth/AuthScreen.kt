@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 
 private val QuartzGreen = Color(0xFF254D3C)
@@ -181,7 +182,9 @@ fun AuthScreen(
             label = "Email",
             placeholder = "Enter your email",
             keyboardType = KeyboardType.Email,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+            modifier = Modifier
+                .fillMaxWidth().padding(horizontal = 20.dp)
+                .testTag("emailField")
         )
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -192,7 +195,9 @@ fun AuthScreen(
             placeholder = "Enter your password",
             isPassword = true,
             keyboardType = KeyboardType.Password,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+            modifier = Modifier
+                .fillMaxWidth().padding(horizontal = 20.dp)
+                .testTag("passField")
         )
         if (isSignUp) {
             Spacer(modifier = Modifier.height(12.dp))
@@ -339,7 +344,8 @@ fun AuthScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .height(52.dp),
+                .height(52.dp)
+                .testTag("signInButton"),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = QuartzGreen,
