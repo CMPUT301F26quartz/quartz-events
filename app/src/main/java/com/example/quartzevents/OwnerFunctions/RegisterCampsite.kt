@@ -98,7 +98,7 @@ fun RegisterCampsite(
                     fontSize = 14.sp,
                     modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
                 )
-                OutlinedTextField(
+                OutlinedTextField( // referenced https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-outlined-text-field.html and https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-outlined-text-field-defaults/colors.html
                     value = campsiteName,
                     onValueChange = { campsiteName = it },
                     placeholder = { Text("Enter", color = Color.Gray) },
