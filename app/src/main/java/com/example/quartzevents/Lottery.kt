@@ -11,7 +11,8 @@ class Lottery(
     var bookingEnd: Date,
     var capacity:Int?=null,
     val id: String,
-    val entrants: MutableList<Entrant>
+    val entrants: MutableList<Entrant>,
+    var winNum: Int?=null
 ) {
 
 

@@ -33,10 +33,11 @@ class LotteryRepository {
         val cap = lottery.capacity
         val id = lottery.id
         val ents = lottery.entrants
+        val winners = lottery.winNum
         ents.add(entrant)
 
         deleteLottery(lottery)
-        addLottery(Lottery(campsites,name,regS,regE,bookS,bookE,cap,id,ents))
+        addLottery(Lottery(campsites,name,regS,regE,bookS,bookE,cap,id,ents, winners))
     }
 
     fun deleteEntrant(lottery: Lottery, entrant: Entrant) {
@@ -49,10 +50,11 @@ class LotteryRepository {
         val cap = lottery.capacity
         val id = lottery.id
         val ents = lottery.entrants
+        val winners = lottery.winNum
         ents.remove(entrant)
 
         deleteLottery(lottery)
-        addLottery(Lottery(campsites,name,regS,regE,bookS,bookE,cap,id,ents))
+        addLottery(Lottery(campsites,name,regS,regE,bookS,bookE,cap,id,ents,winners))
     }
 
     init{

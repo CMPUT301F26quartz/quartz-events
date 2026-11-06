@@ -48,12 +48,9 @@ fun LotteryCreationScreen1(
     lotteries: List<Lottery>, // lotteries list - connects to db
     campsites: MutableList<Campsite> // Sites explicitly owned by the Owner
 ){
-    var back_b by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var next_screen by remember {mutableStateOf(false)}
-    var selected_sites = remember {mutableStateListOf<String>()}
-    var regStartInput by remember {mutableStateOf("")}
-    var regEndInput by remember {mutableStateOf("")}
-    val date_Format = Regex("""^(19|20)\d{2}-(0[1-9]|1[0,1,2])-(0[1-9]|[12][0-9]|3[01])$""") // for checking if entered date is in the correct format
+    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
+    var nextScreen by remember {mutableStateOf(false)}
+    var selectedSites = remember {mutableStateListOf<Campsite>()}
 
     Column(
         modifier = Modifier
@@ -71,7 +68,7 @@ fun LotteryCreationScreen1(
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
                 onClick = {
-                    back_b = true
+                    backB = true
                 }
             ){
                 Icon(
@@ -81,7 +78,7 @@ fun LotteryCreationScreen1(
                 )
             }
 
-            if (back_b) {
+            if (backB) {
                 // previous screen function goes here
             }
 
@@ -109,46 +106,6 @@ fun LotteryCreationScreen1(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 30.dp,top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Text(
-                        "From:",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        "To:",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 30.dp,top = 5.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    OutlinedTextField(
-                        value = regStartInput,
-                        onValueChange = {regStartInput = it},
-                        singleLine = true,
-                        modifier = Modifier.size(100.dp, 30.dp).background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
-                        label = {Text("YYYY-MM-DD",color = Color.Gray)}
-                    )
-                    OutlinedTextField(
-                            value = regEndInput,
-                        onValueChange = {regEndInput = it},
-                        singleLine = true,
-                        modifier = Modifier.size(100.dp, 30.dp).background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
-                        label = {Text("YYYY-MM-DD",color = Color.Gray)}
-                    )
-                }
-
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
                 LazyColumn( // List of available Lottery displays
@@ -157,8 +114,8 @@ fun LotteryCreationScreen1(
                     itemsIndexed(campsites) { index, site ->
                         SiteNameListing( // call composable function that builds each lottery display
                             site = site,
-                            onAddSite = {selected_sites.add(it)},
-                            onRemoveSite = {selected_sites.remove(it)}
+                            onAddSite = {selectedSites.add(it)},
+                            onRemoveSite = {selectedSites.remove(it)}
                         )
                         if (index < campsites.lastIndex) {
                             HorizontalDivider()
@@ -168,8 +125,8 @@ fun LotteryCreationScreen1(
 
                     Button(
                         onClick = {
-                            if (regStartInput != "" && regEndInput != "" && campsites.isNotEmpty() && date_Format.matches(regStartInput) && date_Format.matches(regEndInput)) {
-                                next_screen = true
+                            if (selectedSites.isNotEmpty()) {
+                                nextScreen = true
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -182,7 +139,7 @@ fun LotteryCreationScreen1(
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    if (next_screen){
+                    if (nextScreen){
                         // next screen here
                     }
                 }
@@ -194,8 +151,8 @@ fun LotteryCreationScreen1(
 @Composable
 fun SiteNameListing (
     site: Campsite,
-    onAddSite: (String) -> Unit,
-    onRemoveSite: (String) -> Unit
+    onAddSite: (Campsite) -> Unit,
+    onRemoveSite: (Campsite) -> Unit
 ) {
     var isChecked by remember {mutableStateOf(false)}
     Row (
@@ -210,9 +167,9 @@ fun SiteNameListing (
             onCheckedChange = {
                 isChecked = it
                 if(isChecked) {
-                    onAddSite(site.name)
+                    onAddSite(site)
                 } else if(!isChecked){
-                    onRemoveSite(site.name)
+                    onRemoveSite(site)
                 }
                               },
         )
