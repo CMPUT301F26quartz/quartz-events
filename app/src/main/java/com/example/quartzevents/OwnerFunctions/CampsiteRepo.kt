@@ -5,9 +5,27 @@ import com.example.quartzevents.Campsite
 import com.google.firebase.firestore.FirebaseFirestore
 
 
-//updating and pulling from the database happens here. handles database interactions between owners and firebase
+/**
+ * Manages all database interactions between the Owner and Firebase.
+ *
+ * Acts as a middle man for creating and retrieving data.
+ * Uses Firestore to store and fetch campsite documents.
+ *
+ * @constructor Creates a repository instance and connects to Firestore.
+ */
+
 class CampsiteRepository {
     private val db = FirebaseFirestore.getInstance()
+
+
+    /**
+     * Saves a new campsite.
+     * Generates a unique ID.
+     * Sends data to Firestore.
+     *
+     * @param campsite The data to save.
+     * @param onResult Callback for success or failure.
+     */
 
     fun saveCampsite(
         campsite: Campsite,
@@ -26,8 +44,13 @@ class CampsiteRepository {
             }
     }
 
-
-        // gets every campsite listed to the current logged in owner profile, can be reworked for admin too.
+    /**
+     * Retrieves owner's campsites.
+     * Filters by owner ID.
+     *
+     * @param ownerId The owner's UID.
+     * @param onResult Callback returning the list.
+     */
         fun getOwnerCampsites(
             ownerId: String,
             onResult: (List<Campsite>?, String?) -> Unit
@@ -43,6 +66,15 @@ class CampsiteRepository {
                     onResult(null, exception.message)
                 }
         }
+
+
+    /**
+     * Fetches a single campsite.
+     * Uses the document ID.
+     *
+     * @param campsiteId The document ID.
+     * @param onResult Callback returning the campsite.
+     */
 
     fun getCampsiteById(campsiteId: String, onResult: (Campsite?, String?) -> Unit) {
         db.collection("campsites").document(campsiteId).get()

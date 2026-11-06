@@ -1,5 +1,9 @@
 package com.example.quartzevents
 
+/**
+ * Main entry point of the application.
+ * Initializes Firebase and launches the app UI.
+ */
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -44,6 +48,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Manages authentication and displays screens based on the user's role.
+ */
 @Composable
 fun QuartzEventsApp() {
     val repository = remember { AuthRepository() }
@@ -148,6 +155,9 @@ fun QuartzEventsApp() {
     }
 }
 
+/**
+ * Displays the home screen for the logged-in user.
+ */
 @Composable
 fun RoleHomeScreen(
     profile: UserProfile,
