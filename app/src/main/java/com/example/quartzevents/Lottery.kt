@@ -1,9 +1,36 @@
+
 package com.example.quartzevents
 
-class Lottery(val campsite: Campsite, var registrationStart: String, var registrationEnd: String, var bookingStart: Date, var bookingEnd: Date, var capacity:Int?=null) {
-    private class WaitingList{
-        val entrants: MutableList<Entrant> = mutableListOf()
+import kotlin.to
+
+class Lottery(
+    val campsites: MutableList<Campsite>,
+    val name: String,
+    var registrationStart: Date,
+    var registrationEnd: Date,
+    var bookingStart: Date,
+    var bookingEnd: Date,
+    var capacity:Int?=null,
+    val id: String?=null,
+    val entrants: MutableList<Entrant>,
+    var winNum: Int?=null
+) {
+
+
+    fun add_contestant(contestant: Entrant){
+        entrants.add(contestant)
     }
-    private var contestants = WaitingList()
+
+    fun remove_contestant(contestant: Entrant){
+        entrants.remove(contestant)
+    }
+
+    fun clear_contestant_list(){
+        entrants.clear()
+    }
+
+    fun select_winner(){
+
+    }
 
 }
