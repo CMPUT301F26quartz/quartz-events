@@ -1,3 +1,9 @@
+/**
+ * First of two Screens used in the creation/registration of new lotteries
+ *
+ * This File deals with the selection of which of the owner's campsites are to be included in the
+ * lottery.
+ */
 package com.example.quartzevents
 
 import androidx.compose.foundation.background
@@ -43,11 +49,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * This function is the main controlling function for this screen
+ *
+ * The function contains the buttons to go back to the previous screen, and onto the next,
+ * as well as the lazy column containing the campsite listings to be selected for the lottery.
+ * At least one campsite must be selected before the "create new lottery" button will be functional
+ * and take the user to the next screen.
+ *
+ * @property loteries a mutable list of Lottery objects to be passed to other functions
+ * @property campsites a mutable list of Campsite objects to be used in generating the
+ * campsite listings in the lazy column
+ * @property onAddLottery a lambda function to be passed to other functions
+ */
 @Composable
 fun LotteryCreationScreen1(
     lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: MutableList<Campsite>, // Sites explicitly owned by the Owner
-    onAddLottery: (MutableList<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
+    campsites: List<Campsite>, // Sites explicitly owned by the Owner
+    onAddLottery: (List<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
 ){
     var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
     var nextScreen by remember {mutableStateOf(false)}
@@ -80,7 +99,7 @@ fun LotteryCreationScreen1(
             }
 
             if (backB) {
-                LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
+                LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit},{lottery -> Unit})
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -149,7 +168,16 @@ fun LotteryCreationScreen1(
         }
     }
 
-
+/**
+ * Composable function that creates the campsite listing UI elements
+ *
+ * Consists of a checkbox that adds the site to a list of campsites when checked,
+ * and a box containing the campsite's name.
+ *
+ * @property site a Campsite object to be displayed
+ * @property onAddSite a lambda function used to add the site to a list when the checkbox is checked
+ * @property onRemoveSite a lambda function used to remove the site from the list when the checkbox is unchecked
+ */
 @Composable
 fun SiteNameListing (
     site: Campsite,

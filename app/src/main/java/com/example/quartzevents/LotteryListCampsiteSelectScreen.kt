@@ -1,3 +1,18 @@
+/**
+ * Displays to the Owner Campsites they own that are part of Lotteries,
+ * and what the registration periods of those lotteries are.
+ *
+ * Each Campsite Display includes the name of the campsite and the registration
+ * start and end dates for the lottery it is a part of. These displays are contained
+ * inside a lazy column for ease of display in the UI. There are three buttons at the
+ * of the screen. The "create new lottery" button calls the LotteryCreationScreen1() function
+ * from LotteryCreationScreen1.kt, and is the first step in the lottery creation/registration
+ * process. The "Edit" button calls the LotteryUpdateScreen1() function
+ * from LotteryUpdateScreen1.kt, and is the first step in the lottery update process.
+ * The "delete" button does not yet have functionality, but will lead to the deletion of the
+ * lottery associated with the campsite selected.
+ */
+
 package com.example.quartzevents
 
 import android.R.attr.checked
@@ -25,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,15 +52,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * The main UI body, contains all UI elements, including the list of CampsiteListing objects
+ *
+ * Each Campsite Display includes the name of the campsite and the registration
+ *  * start and end dates for the lottery it is a part of. These displays are contained
+ *  * inside a lazy column for ease of display in the UI. There are three buttons at the
+ *  * of the screen. The "create new lottery" button calls the LotteryCreationScreen1() function
+ *  * from LotteryCreationScreen1.kt, and is the first step in the lottery creation/registration
+ *  * process. The "Edit" button calls the LotteryUpdateScreen1() function
+ *  * from LotteryUpdateScreen1.kt, and is the first step in the lottery update process.
+ *  * The "delete" button does not yet have functionality, but will lead to the deletion of the
+ *  * lottery associated with the campsite selected.
+ *
+ *  @property lotteries a list of Lottery objects.
+ *  @property campsites a mutable list of Campsite objects
+ *  @property onAddLottery a lambda function to be passed to another function
+ *  @property onUpdateLottery a lambda function to be passed to another function
+ */
 @Composable
 fun LotteryListCampsiteSelectScreen(
     lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: MutableList<Campsite>, // Sites explicitly owned by the Owner
-    onAddLottery: (MutableList<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
+    campsites: List<Campsite>, // Sites explicitly owned by the Owner
+    onAddLottery: (List<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit,
+    onUpdateLottery: (Lottery) -> Unit
 ){
-    var back_b by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var next_screen by remember {mutableStateOf(false)}
-    var camp_info: MutableList<MutableMap<String,MutableList<Date>>> = mutableListOf<MutableMap<String,MutableList<Date>>>()
+    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
+    var creationScreen by remember {mutableStateOf(false)}
+    var updateScreen by remember {mutableStateOf(false)}
+    var campInfo: MutableList<MutableMap<String,MutableList<Date>>> = mutableListOf<MutableMap<String,MutableList<Date>>>()
+    var selectedSite: Campsite = Campsite("","","","","","","","")
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -60,7 +97,7 @@ fun LotteryListCampsiteSelectScreen(
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
                 onClick = {
-                    back_b = true
+                    backB = true
                 }
             ){
                 Icon(
@@ -70,7 +107,7 @@ fun LotteryListCampsiteSelectScreen(
                 )
             }
 
-            if (back_b) {
+            if (backB) {
                 // previous screen function goes here
             }
 
@@ -101,7 +138,7 @@ fun LotteryListCampsiteSelectScreen(
                 for (lottery in lotteries) {
                     for (site in lottery.campsites) {
                         if (site in campsites) { // ensures a site is only listed if the owner owns it
-                            camp_info.add(
+                            campInfo.add(
                                 mutableMapOf(
                                     site.name to mutableListOf(
                                         lottery.registrationStart,
@@ -116,16 +153,18 @@ fun LotteryListCampsiteSelectScreen(
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    itemsIndexed(camp_info) { index, site_info ->
+                    itemsIndexed(campInfo) { index, siteInfo ->
                         CampsiteListing( // call composable function that builds each lottery display
-                            site_info = site_info
+                            siteInfo = siteInfo,
+                            onAddSite = {selectedSite = it},
+                            onRemoveSite = {selectedSite = Campsite("","","","","","","","")},
+                            selectedSite = selectedSite,
+                            sites = campsites
                         )
-                        if (index < camp_info.lastIndex) {
+                        if (index < campInfo.lastIndex) {
                             HorizontalDivider()
                         }
-//                        if(next_screen) {
-//                            LotteryDetailScreen({Lottery, Entrant -> Unit},lotteries,lottery,campsite)
-//                        }
+
                     }
                 }
                 Column(
@@ -139,7 +178,7 @@ fun LotteryListCampsiteSelectScreen(
                     ) {
                         Button(  // Edit Button
                             onClick = {
-                                // TODO: Add US 02.04.07 functionality here
+                                updateScreen = true
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.DarkGray
@@ -150,6 +189,14 @@ fun LotteryListCampsiteSelectScreen(
                                 "Edit",
                                 color = MaterialTheme.colorScheme.secondary
                             )
+                        }
+
+                        if (updateScreen) {
+                            for (lottery in lotteries) {
+                                if(selectedSite in lottery.campsites) {
+                                    LotteryUpdateScreen1(lotteries,campsites,lottery,{lottery -> Unit})
+                                }
+                            }
                         }
 
                         Button( // Remove Button
@@ -170,7 +217,7 @@ fun LotteryListCampsiteSelectScreen(
 
                     Button(
                         onClick = {
-                            next_screen = true
+                            creationScreen = true
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
@@ -182,8 +229,8 @@ fun LotteryListCampsiteSelectScreen(
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    if (next_screen){
-                        LotteryCreationScreen1(lotteries, campsites, )
+                    if (creationScreen){
+                        LotteryCreationScreen1(lotteries, campsites, {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
                     }
                 }
             }
@@ -191,13 +238,35 @@ fun LotteryListCampsiteSelectScreen(
     }
 }
 
+
+/**
+ * Reusable Composable object that creates a display of a campsite name and the registration dates of it's
+ * associated lottery.
+ *
+ * Only one checkbox can be selected at one time to ensure the correct lottery is passed to the update function in
+ * the LotteryListCampsiteSelectScreen() function. Otherwise, just holds text.
+ *
+ * @property siteInfo a map with the campsite name as the key, and a mutable list containing the registration
+ * dates as its value.
+ * @property onAddSite a lambda function that adds the selected campsite to the selectedSite variable by passing
+ * it back to LotteryListCampsiteSelectScreen()
+ * @property onRemoveSite a lambda function that removes the selected campsite from the selectedSite variable by passing
+ * it back to LotteryListCampsiteSelectScreen()
+ * @property selectedSite a Campsite object to be used in determining the lottery to be passed to
+ * LotteryUpdateScreen1()
+ * @property sites a mutable list of Campsite objects
+ */
 @Composable
 fun CampsiteListing (
-    site_info: MutableMap<String,MutableList<Date>>
+    siteInfo: MutableMap<String,MutableList<Date>>,
+    onAddSite: (Campsite) -> Unit,
+    onRemoveSite: (Campsite) -> Unit,
+    selectedSite: Campsite,
+    sites: List<Campsite>
 ) {
     var isChecked by remember { mutableStateOf(false)}
-    val key = site_info.keys.toList()[0]
-    val dates = site_info[key]
+    val key = siteInfo.keys.toList()[0]
+    val dates = siteInfo[key]
     Row (
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, bottom = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -205,7 +274,18 @@ fun CampsiteListing (
     ) {
         Checkbox(
             checked = isChecked,
-            onCheckedChange = { isChecked = it },
+            onCheckedChange = {
+                if(selectedSite.id == "") {
+                    isChecked = it
+                    for (site in sites) {
+                        if(key == site.name) {
+                            onAddSite(site)
+                        }
+                    }
+                } else {
+                    onRemoveSite(selectedSite)
+                }
+                              },
         )
         Box (
             modifier = Modifier

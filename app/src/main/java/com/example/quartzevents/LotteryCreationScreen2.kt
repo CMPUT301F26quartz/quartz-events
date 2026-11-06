@@ -1,3 +1,6 @@
+/**
+ * The second of Two Screens used in the creation/reistration of new Lotteries
+ */
 package com.example.quartzevents
 
 import androidx.compose.foundation.background
@@ -47,9 +50,9 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun LotteryCreationScreen2(
     lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: MutableList<Campsite>, // Sites explicitly owned by the Owner
+    campsites: List<Campsite>, // Sites explicitly owned by the Owner
     selectedSites: MutableList<Campsite>,
-    onAddLottery: (MutableList<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
+    onAddLottery: (List<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
 ) {
     var backB by remember { mutableStateOf(false) } // used in button presses for changing screens
     var regStartInput by remember { mutableStateOf("") }
@@ -95,7 +98,7 @@ fun LotteryCreationScreen2(
             }
 
             if (backB) {
-                LotteryCreationScreen1(lotteries,campsites)
+                LotteryCreationScreen1(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -119,7 +122,7 @@ fun LotteryCreationScreen2(
                     )
             ) {
                 Text(
-                    "List Campsites Into Lottery",
+                    "Lottery Details",
                     fontSize = 25.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -230,7 +233,7 @@ fun LotteryCreationScreen2(
 
                 Text(
                     buildAnnotatedString {
-                        append("Registration Period")
+                        append("Booking Period")
                         withStyle(superscript) {
                             append("*")
                         }
@@ -242,7 +245,7 @@ fun LotteryCreationScreen2(
                 )
 
                 Text(
-                    "Define when entrants can join the lottery.",
+                    "Specify the dates when the campsites will be available for booking.",
                     fontSize = 16.sp,
                     color = Color.Gray,
                     modifier = Modifier.padding(start = 25.dp, top = 5.dp)

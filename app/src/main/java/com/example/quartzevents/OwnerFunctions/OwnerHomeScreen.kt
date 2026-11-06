@@ -23,8 +23,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.quartzevents.OwnerFunctions.CampsiteRepository
 import com.example.quartzevents.Campsite
-
-
+import com.example.quartzevents.Lottery
+import com.example.quartzevents.LotteryListCampsiteSelectScreen
+import com.example.quartzevents.LotteryRepository
 
 
 private val QuartzGreen = Color(0xFF254D3C)
@@ -40,18 +41,30 @@ fun OwnerHomeScreen (
     onLogout: () -> Unit) {
 
 
-    val repository = remember { CampsiteRepository() }
+    val campRepository = remember { CampsiteRepository() }
+    val lotteryRepository = remember { LotteryRepository() }
     var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
+    var lotteries by remember { mutableStateOf<List<Lottery>>(emptyList()) }
 
 
 
     LaunchedEffect(Unit) {
-        repository.getOwnerCampsites(profile.uid) { result, _ ->
+        campRepository.getOwnerCampsites(profile.uid) { result, _ ->
             if (result != null) {
                 campsites = result
             }
         }
     }
+
+    LaunchedEffect(Unit) {
+        lotteryRepository.getAllLotteries { lots, string ->
+            if (lots != null) {
+                lotteries = lots
+            }
+        }
+    }
+
+    var toLottery by remember {mutableStateOf(false)}
 
     Column(
         modifier = Modifier
@@ -159,13 +172,24 @@ fun OwnerHomeScreen (
                 }
             }
 
-            Button(onClick = onAddCampsiteClick,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 30.dp, end = 10.dp))
-            {Text("add campsite")}
+                Button(onClick = onAddCampsiteClick,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 30.dp, end = 10.dp))
+                {Text("add campsite")}
+
+                Button(onClick = {toLottery = true},
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 30.dp, end = 10.dp))
+                {Text("Lottery List")}
 
 
+                if(toLottery){
+                    LotteryListCampsiteSelectScreen(lotteries,campsites,
+                        {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit},
+                        {lottery -> Unit})
+                }
         }
     }
 }}
