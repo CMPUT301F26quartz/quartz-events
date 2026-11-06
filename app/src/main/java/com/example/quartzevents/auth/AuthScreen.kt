@@ -354,6 +354,7 @@ fun AuthScreen(
                 disabledContentColor = QuartzWhite
             )
 
+
         ) {
             Text(
                 if (isLoading) "Please wait..."
