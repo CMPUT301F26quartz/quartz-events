@@ -19,6 +19,10 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 
+import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
+import com.example.quartzevents.OwnerFunctions.RegisterCampsite
+import com.example.quartzevents.OwnerFunctions.CampsiteDetails
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,10 +53,13 @@ fun QuartzEventsApp() {
     var isLoading by remember {
         mutableStateOf(true)
     }
-    // TODO: Replace with shared navigation when the dashboard is ready.
     var isSearchScreenVisible by rememberSaveable {
         mutableStateOf(false)
     }
+    var isCreatingCampsite by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -97,7 +104,34 @@ fun QuartzEventsApp() {
 
 
         // Show screen based on user role
+        //main owner switchboard
         else -> {
+            if (currentProfile?.role == "owner") {
+
+                if (selectedCampsiteId != null) {
+                    CampsiteDetails(
+                        campsiteId = selectedCampsiteId!!,
+                        onBack = { selectedCampsiteId = null }
+                    )
+                } else if (isCreatingCampsite) {
+                    RegisterCampsite(
+                        onBack = { isCreatingCampsite = false },
+                        onSaveSuccess = { isCreatingCampsite = false }
+                    )
+                } else {
+                    OwnerHomeScreen(
+                        profile = currentProfile!!,
+                        onAddCampsiteClick = { isCreatingCampsite = true },
+                        onViewDetailsClick = { id -> selectedCampsiteId = id },
+                        onLogout = {
+                            repository.logout()
+                            currentProfile = null
+                        }
+                    )
+                }
+
+            } else {
+
             RoleHomeScreen(
                 profile = currentProfile!!,
                 onSearch = {
@@ -109,6 +143,7 @@ fun QuartzEventsApp() {
                     currentProfile = null
                 }
             )
+        }
         }
     }
 }
@@ -146,6 +181,12 @@ fun RoleHomeScreen(
         }
         else if(profile.role == "admin"){
             AdminDashboardScreen()
+        }
+
+        if (profile.role == "owner") {
+            SearchCampsitesButton(onClick = onSearch)
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         Text(
