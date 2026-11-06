@@ -1,58 +1,82 @@
+//TODO: add description
+
 package com.example.quartzevents
 
-import androidx.compose.runtime.mutableStateListOf
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.FirebaseFirestore
 
 class UserRepository {
-    private val _users = mutableStateListOf<User>()
-    val users: List<User>
-        get()=_users
+    private val db = FirebaseFirestore.getInstance()
 
-    private val _admins = mutableStateListOf<User>()
-    val admins: List<User>
-        get()=_users
-
-    private val _owners = mutableStateListOf<User>()
-    val owners: List<User>
-        get()=_owners
-
-    private val _entrants = mutableStateListOf<User>()
-    val entrants: List<User>
-        get()=_entrants
-
-    init{
-        Firebase.firestore.collection("users")
-            .addSnapshotListener {
-                    snapshot, error ->  if(error!=null || snapshot==null){
-                return@addSnapshotListener
-            }
-
-                _users.clear()
-                _admins.clear()
-                _owners.clear()
-                _entrants.clear()
-
-                snapshot?.documents?.forEach {document ->
-                    val role = document.getString("role")
-                    var user:User?
-                    if(role == "admin"){
-                        user = document.toObject(Admin::class.java)
+    //provides all users
+    fun getAllUsers(
+        onResult: (List<User>?, String?) -> Unit
+    ) {
+        db.collection("users")
+            .get()
+            .addOnSuccessListener { result ->
+                val users = mutableListOf<User>()
+                for(document in result.documents) {
+                    val user: User? = when (document.getString("role")) {
+                        "admin"   -> document.toObject(Admin::class.java)
+                        "owner"   -> document.toObject(Owner::class.java)
+                        "entrant" -> document.toObject(Entrant::class.java)
+                        else      -> null
                     }
-                    else if(role == "owner"){
-                        user = document.toObject(Owner::class.java)
-                    }
-                    else {
-                        user = document.toObject(Entrant::class.java)
-                    }
-                    if(user!=null){
-                        _users.add(user)
-                        //adding into list according to role
-                        if(user.role == "admin") _admins.add(user)
-                        else if(user.role == "owner") _owners.add(user)
-                        else if(user.role == "entrant") _entrants.add(user)
-                    }
+                    if (user != null) users.add(user)
                 }
+                onResult(users, null)
+            }
+            .addOnFailureListener { exception ->
+                onResult(null, exception.message)
             }
     }
+
+    //provides all admin users
+    fun getAllAdmin(
+        onResult: (List<Admin>?, String?) -> Unit
+    ) {
+        db.collection("users")
+            .whereEqualTo("role", "admin")
+            .get()
+            .addOnSuccessListener { result ->
+                val admin = result.toObjects(Admin::class.java)
+                onResult(admin, null)
+            }
+            .addOnFailureListener { exception ->
+                onResult(null, exception.message)
+            }
+    }
+
+    //provides all entrant users
+    fun getAllEntrants(
+        onResult: (List<Entrant>?, String?) -> Unit
+    ) {
+        db.collection("users")
+            .whereEqualTo("role", "entrant")
+            .get()
+            .addOnSuccessListener { result ->
+                val entrants = result.toObjects(Entrant::class.java)
+                onResult(entrants, null)
+            }
+            .addOnFailureListener { exception ->
+                onResult(null, exception.message)
+            }
+    }
+
+    //provides all owner users
+    fun getAllOwners(
+        onResult: (List<Owner>?, String?) -> Unit
+    ) {
+        db.collection("users")
+            .whereEqualTo("role", "owner")
+            .get()
+            .addOnSuccessListener { result ->
+                val owners = result.toObjects(Owner::class.java)
+                onResult(owners, null)
+            }
+            .addOnFailureListener { exception ->
+                onResult(null, exception.message)
+            }
+    }
+
 }

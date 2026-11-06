@@ -1,8 +1,8 @@
 package com.example.quartzevents
 
-abstract class User(){
-    val email: String = ""
-    val name: String = ""
-    val role: String = ""
-    val uid: String = ""
-}
+abstract class User(
+    var email: String = "",
+    var name: String = "",
+    var role: String = "",
+    var uid: String = ""
+){}

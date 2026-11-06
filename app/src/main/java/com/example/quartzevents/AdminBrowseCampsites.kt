@@ -1,3 +1,5 @@
+//TODO: add description
+
 package com.example.quartzevents
 
 import androidx.compose.foundation.background
@@ -11,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -22,26 +23,51 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun AdminBrowseCampsitesScreen(back: () -> Unit){
-    val campsiteRepository = CampsiteRepository()
-    val campsites = campsiteRepository.campsites
-    val userRepository = UserRepository()
-    val owners = userRepository.owners
+    val campsiteRepository = remember{ CampsiteRepository() }
+    var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        campsiteRepository.getAllCampsites() { result, error ->
+            if (result != null) {
+                campsites = result
+            }
+        }
+    }
+
+    val userRepository = remember{ UserRepository() }
+    var owners by remember { mutableStateOf<List<Owner>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        userRepository.getAllOwners() { result, error ->
+            if (result != null) {
+                owners = result
+            }
+        }
+    }
+    //TODO: fix permissions for admin on firebase
+    if(owners.isEmpty()){
+        println("EMPTY")
+    }
+    else{
+        println("NOT EMPTY")
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F6ED))
-//            .verticalScroll(rememberScrollState())
             .safeDrawingPadding()
             .imePadding(),
     ){
@@ -92,7 +118,6 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             for(campsite in campsites){
-//            items(campsites){ campsite ->
                 //finding campsite owner
                 var ownerName:String? = null
                 for(owner in owners){
