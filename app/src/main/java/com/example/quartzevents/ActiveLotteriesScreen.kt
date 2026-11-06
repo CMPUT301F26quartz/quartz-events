@@ -37,10 +37,11 @@ import androidx.compose.ui.text.font.FontWeight
 @Composable
 fun ActiveLotteriesScreen(
     lotteries: List<Lottery>, // lotteries list - connects to db
-    campsite: String
+    campsite: String,
+    user: Entrant
 ){
-    var back_b by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var next_screen by remember {mutableStateOf(false)}
+    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
+    var nextScreen by remember {mutableStateOf(false)}
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -56,7 +57,7 @@ fun ActiveLotteriesScreen(
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
                 onClick = {
-                    back_b = true
+                    backB = true
                 }
             ){
                 Icon(
@@ -66,7 +67,7 @@ fun ActiveLotteriesScreen(
                 )
             }
 
-            if (back_b) {
+            if (backB) {
                 // previous screen function goes here
             }
 
@@ -109,14 +110,14 @@ fun ActiveLotteriesScreen(
                         CampsiteLotteryDisplay( // call composable function that builds each lottery display
                             lottery = lottery,
                             onClick = {
-                                next_screen = true
+                                nextScreen = true
                             }
                         )
                         if (index < lotteries.lastIndex) {
                             HorizontalDivider()
                         }
-                        if(next_screen) {
-                            LotteryDetailScreen({Lottery, Entrant -> Unit},lotteries,lottery,campsite)
+                        if(nextScreen) {
+                            LotteryDetailScreen({lottery, user -> Unit},lotteries,lottery,campsite, user)
                         }
                     }
                 }

@@ -16,45 +16,30 @@ class LotteryRepository {
 
 
     fun addLottery(lottery: Lottery) {
-        lotteryRef.document().set(lottery)
+        val lotteryId = lotteryRef.document().id
+        lotteryRef.document(lotteryId).set(lottery)
     }
 
     fun deleteLottery(lottery: Lottery) {
-        lotteryRef.document(lottery.id).delete()
+        lotteryRef.document(lottery.id.toString()).delete()
     }
 
     fun addEntrant(lottery: Lottery, entrant: Entrant) {
-        val campsites = lottery.campsites
-        val name = lottery.name
-        val regS = lottery.registrationStart
-        val regE = lottery.registrationEnd
-        val bookS = lottery.bookingStart
-        val bookE = lottery.bookingEnd
-        val cap = lottery.capacity
-        val id = lottery.id
         val ents = lottery.entrants
-        val winners = lottery.winNum
         ents.add(entrant)
 
         deleteLottery(lottery)
-        addLottery(Lottery(campsites,name,regS,regE,bookS,bookE,cap,id,ents, winners))
+        lotteryRef.document(lottery.id.toString()).set(Lottery(lottery.campsites,lottery.name,
+            lottery.registrationStart,lottery.registrationEnd,lottery.bookingStart,lottery.bookingEnd,lottery.capacity,lottery.id,ents, lottery.winNum))
     }
 
     fun deleteEntrant(lottery: Lottery, entrant: Entrant) {
-        val campsites = lottery.campsites
-        val name = lottery.name
-        val regS = lottery.registrationStart
-        val regE = lottery.registrationEnd
-        val bookS = lottery.bookingStart
-        val bookE = lottery.bookingEnd
-        val cap = lottery.capacity
-        val id = lottery.id
         val ents = lottery.entrants
-        val winners = lottery.winNum
         ents.remove(entrant)
 
         deleteLottery(lottery)
-        addLottery(Lottery(campsites,name,regS,regE,bookS,bookE,cap,id,ents,winners))
+        lotteryRef.document(lottery.id.toString()).set(Lottery(lottery.campsites,lottery.name,
+            lottery.registrationStart,lottery.registrationEnd,lottery.bookingStart,lottery.bookingEnd,lottery.capacity,lottery.id,ents, lottery.winNum))
     }
 
     init{

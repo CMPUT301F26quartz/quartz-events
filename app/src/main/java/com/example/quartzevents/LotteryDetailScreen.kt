@@ -39,10 +39,11 @@ fun LotteryDetailScreen (
     onAddEntrant: (Lottery, Entrant) -> Unit,
     lotteries: List<Lottery>,
     lottery: Lottery,
-    campsite: String
+    campsite: String,
+    user: Entrant
 ){
-    var back_b by remember {mutableStateOf(false)}
-    var next_screen by remember {mutableStateOf(false)}
+    var backB by remember {mutableStateOf(false)}
+    var nextScreen by remember {mutableStateOf(false)}
     val months: MutableMap<Int, String> = mutableMapOf(
         Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec") )
     Column(
@@ -59,7 +60,7 @@ fun LotteryDetailScreen (
             IconButton(
                 modifier = Modifier.padding(start = 15.dp),
                 onClick = {
-                    back_b = true
+                    backB = true
                 }
             ){
                 Icon(
@@ -69,8 +70,8 @@ fun LotteryDetailScreen (
                 )
             }
 
-            if(back_b){
-                ActiveLotteriesScreen(lotteries,campsite)
+            if(backB){
+                ActiveLotteriesScreen(lotteries,campsite, user)
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -194,7 +195,8 @@ fun LotteryDetailScreen (
                 ) {
                     Button(
                         onClick = {
-                            next_screen = true
+                            nextScreen = true
+                            onAddEntrant(lottery,user)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
@@ -207,8 +209,8 @@ fun LotteryDetailScreen (
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
-                    if (next_screen) {
-                        LotteryStatusScreen({Lottery, Entrant -> Unit},lotteries,lottery,campsite)
+                    if (nextScreen) {
+                        LotteryStatusScreen({lottery, user -> Unit},lotteries,lottery,campsite, user)
                     }
                 }
             }

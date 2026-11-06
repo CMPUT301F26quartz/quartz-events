@@ -49,7 +49,7 @@ fun LotteryCreationScreen2(
     lotteries: List<Lottery>, // lotteries list - connects to db
     campsites: MutableList<Campsite>, // Sites explicitly owned by the Owner
     selectedSites: MutableList<Campsite>,
-    onAddLottery: (MutableList<Campsite>,String,Date,Date,Date,Date,Int,String,MutableList<Entrant>,Int) -> Unit
+    onAddLottery: (MutableList<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
 ) {
     var backB by remember { mutableStateOf(false) } // used in button presses for changing screens
     var regStartInput by remember { mutableStateOf("") }
@@ -95,7 +95,7 @@ fun LotteryCreationScreen2(
             }
 
             if (backB) {
-                // previous screen function goes here
+                LotteryCreationScreen1(lotteries,campsites)
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -355,7 +355,6 @@ fun LotteryCreationScreen2(
                                 Date(bookStartInput),
                                 Date(bookStartInput),
                                 capacityInput,
-                                "id",
                                 entrantsInput,
                                 winnersInput)
 

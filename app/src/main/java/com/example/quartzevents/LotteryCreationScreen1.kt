@@ -46,7 +46,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun LotteryCreationScreen1(
     lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: MutableList<Campsite> // Sites explicitly owned by the Owner
+    campsites: MutableList<Campsite>, // Sites explicitly owned by the Owner
+    onAddLottery: (MutableList<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
 ){
     var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
     var nextScreen by remember {mutableStateOf(false)}
@@ -79,7 +80,7 @@ fun LotteryCreationScreen1(
             }
 
             if (backB) {
-                // previous screen function goes here
+                LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -140,7 +141,8 @@ fun LotteryCreationScreen1(
                         )
                     }
                     if (nextScreen){
-                        // next screen here
+                        LotteryCreationScreen2(lotteries,campsites,selectedSites,
+                            {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
                     }
                 }
             }
