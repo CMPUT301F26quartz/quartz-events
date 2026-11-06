@@ -1,4 +1,14 @@
-//TODO: add description
+/**
+ * Shows all campsites, including the user's name and role, allows admin to remove a campsite
+ *
+ * Supported screens:
+ *  - campsite details
+ *  - confirm remove campsite option (future implementation)
+ *
+ *  * @param back to support ability to return to the admin dashboard
+ *  * @return None
+ */
+
 
 package com.example.quartzevents
 
