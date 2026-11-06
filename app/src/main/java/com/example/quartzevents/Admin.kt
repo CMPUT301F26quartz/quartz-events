@@ -1,10 +1,9 @@
 package com.example.quartzevents
 
-class Admin(email: String, name: String, password: String): User(email, name, password) {
-    override fun userType(): String{
-        val type = "admin"
-        return type
-    }
-
+class Admin(
+    email: String = "",
+    name: String = "",
+    uid: String = ""
+) : User(email, name, role = "admin", uid = uid) {
     val messages: MutableList<Message> = mutableListOf()
 }
