@@ -24,12 +24,19 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
 
-private val darkGreen = Color(0xFF234F40)
-private val backgroundCream = Color(0xFFF8F6ED)
+private val darkGreen = Color(0xFF244D3D)
+private val backgroundCream = Color(0xFFF7F5ED)
 private val cardGray = Color(0xFFD9D9D9)
 private val textDark = Color(0xFF303834)
 private val textGray = Color(0xFF686868)
 
+/**
+ * Loads and displays one campsite, including loading, missing-document, and retry states.
+ *
+ * @param campsiteId The campsite's Firestore document ID.
+ * @param onBack Returns to the page that opened these details.
+ * @param repository The shared campsite data source owned by the calling page.
+ */
 @Composable
 fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit, repository: CampsiteInfoRepository) {
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
@@ -67,12 +74,13 @@ fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit, repository: Ca
     }
 }
 
+/** Displays the campsite details title and back button. */
 @Composable
 private fun DetailsHeader(onBack: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().background(darkGreen)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .padding(start = 8.dp, end = 16.dp, top = 40.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
@@ -83,11 +91,12 @@ private fun DetailsHeader(onBack: () -> Unit) {
     }
 }
 
+/** Displays campsite information, a photo placeholder, and associated open lotteries. */
 @Composable
 internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
     Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(campsite.name, color = textDark, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         CampsitePhoto()
@@ -125,15 +134,17 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
 
 }
 
+/** Displays a section heading using the campsite page style. */
 @Composable
 private fun DetailHeading(text: String) {
     Text(text, color = darkGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
 }
 
+/** Displays a photo placeholder until network image loading is connected. */
 @Composable
 private fun CampsitePhoto() {
     Surface(color = cardGray, shape = RoundedCornerShape(8.dp)) {
-        Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().height(124.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.Image, contentDescription = null, tint = textGray, modifier = Modifier.size(32.dp))
                 Text("Campsite photo", color = textGray)
@@ -142,6 +153,14 @@ private fun CampsitePhoto() {
     }
 }
 
+/**
+ * Checks whether today falls within the lottery registration dates, including both endpoints.
+ *
+ * @param start Registration start date in YYYY-MM-DD format.
+ * @param end Registration end date in YYYY-MM-DD format.
+ * @param today Today's date in YYYY-MM-DD format.
+ * @return True when the registration dates are valid and include today.
+ */
 internal fun registrationIsOpen(start: String, end: String, today: String): Boolean {
     val startDate = Date(start)
     val endDate = Date(end)
@@ -150,6 +169,7 @@ internal fun registrationIsOpen(start: String, end: String, today: String): Bool
         !currentDate.isBefore(startDate) && !currentDate.isAfter(endDate)
 }
 
+/** Reads the campsite's associated lotteries from Firestore and lists those open for registration. */
 @Composable
 private fun CampsiteLotteries(campsiteId: String) {
     var names by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
@@ -188,7 +208,7 @@ private fun CampsiteLotteries(campsiteId: String) {
             TextButton(onClick = { reloadCount++ }) { Text("Retry lotteries", color = darkGreen) }
         }
         names.isEmpty() -> Text("No lotteries are currently open for registration.", color = textGray)
-        else -> Surface(color = cardGray, shape = RoundedCornerShape(8.dp)) {
+        else -> Surface(color = Color(0xFFE3D005), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("${names.size} ${if (names.size == 1) "lottery" else "lotteries"} open", color = darkGreen, fontWeight = FontWeight.Bold)
                 for (name in names) Text(name, color = textDark)

@@ -9,26 +9,33 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val darkGreen = Color(0xFF234F40)
-private val backgroundCream = Color(0xFFF8F6ED)
+private val darkGreen = Color(0xFF244D3D)
+private val backgroundCream = Color(0xFFF7F5ED)
 private val cardGray = Color(0xFFD9D9D9)
 private val textDark = Color(0xFF303834)
 private val textGray = Color(0xFF686868)
-private val pagePadding = 20.dp
+private val pagePadding = 18.dp
 private val itemSpacing = 12.dp
 private val cornerRadius = 8.dp
 
 private enum class SearchPage { SEARCH, FILTERS, RESULTS }
 
+/**
+ * Displays the live campsite list and switches between search, filters, results, and details.
+ *
+ * @param onBack Returns to the entrant home page.
+ */
 @Composable
 fun EntrantSearchScreen(onBack: () -> Unit) {
     var searchText by remember { mutableStateOf("") }
@@ -109,7 +116,7 @@ fun EntrantSearchScreen(onBack: () -> Unit) {
             }
 
             Text(
-                text = "Browse Campsites",
+                text = "Available Campsites",
                 color = darkGreen,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
@@ -143,11 +150,12 @@ fun EntrantSearchScreen(onBack: () -> Unit) {
                     containerColor = darkGreen,
                     contentColor = Color.White
                 )
-            ) { Text("Search") }
+            ) { Text("Search", fontWeight = FontWeight.Bold) }
         }
     }
 }
 
+/** Displays the search page title and back button. */
 @Composable
 private fun SearchHeader(onBack: () -> Unit) {
     Row(
@@ -155,7 +163,7 @@ private fun SearchHeader(onBack: () -> Unit) {
             .fillMaxWidth()
             .background(darkGreen)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .padding(start = 8.dp, end = 16.dp, top = 40.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
@@ -175,6 +183,7 @@ private fun SearchHeader(onBack: () -> Unit) {
     }
 }
 
+/** Displays the campsite name input and the button that opens the filters. */
 @Composable
 private fun SearchControls(
     searchText: String,
@@ -184,20 +193,29 @@ private fun SearchControls(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 24.dp)
+            .padding(top = 12.dp, bottom = 24.dp)
     ) {
+        Text("Find a Campsite", color = darkGreen, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(20.dp))
         OutlinedTextField(
             value = searchText,
             onValueChange = onTextChange,
             placeholder = { Text("Search campsites...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("campsiteSearchInput"),
             shape = RoundedCornerShape(cornerRadius),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
                 focusedBorderColor = darkGreen,
                 unfocusedBorderColor = cardGray,
+                focusedTextColor = textDark,
+                unfocusedTextColor = textDark,
+                focusedPlaceholderColor = textGray,
+                unfocusedPlaceholderColor = textGray,
+                focusedLeadingIconColor = textGray,
+                unfocusedLeadingIconColor = textGray,
                 cursorColor = darkGreen
             )
         )
@@ -206,11 +224,14 @@ private fun SearchControls(
 
         TextButton(
             onClick = onFilters,
-            modifier = Modifier.align(Alignment.End)
-        ) { Text("Filters", color = darkGreen) }
+            modifier = Modifier.align(Alignment.End).width(104.dp),
+            shape = RoundedCornerShape(cornerRadius),
+            colors = ButtonDefaults.textButtonColors(containerColor = cardGray, contentColor = textDark)
+        ) { Text("Filters", fontWeight = FontWeight.Bold) }
     }
 }
 
+/** Displays campsite cards and passes the selected document ID to [onCampsiteClick]. */
 @Composable
 private fun CampsiteList(
     campsites: List<CampsiteInfo>,
@@ -232,6 +253,7 @@ private fun CampsiteList(
     }
 }
 
+/** Displays a clickable campsite summary with its name, location, and tags. */
 @Composable
 private fun CampsiteCard(campsite: CampsiteInfo, onClick: () -> Unit) {
     Surface(
@@ -240,12 +262,13 @@ private fun CampsiteCard(campsite: CampsiteInfo, onClick: () -> Unit) {
         color = cardGray,
         shape = RoundedCornerShape(cornerRadius)
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(campsite.name, color = textDark, fontWeight = FontWeight.Bold)
-            Text(campsite.location, color = textGray)
+        Row(Modifier.fillMaxWidth().heightIn(min = 84.dp).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(campsite.name, color = textDark, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(listOf(campsite.location, campsite.tags).filter { it.isNotBlank() }.joinToString(" · "),
+                    color = textGray, fontSize = 13.sp)
+            }
+            Text("›", color = darkGreen, fontSize = 26.sp, modifier = Modifier.padding(start = 12.dp))
         }
     }
 }

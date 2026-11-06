@@ -9,16 +9,23 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
 
+/**
+ * Provides shared Firestore access to campsite lists and individual campsite details.
+ * The owning page calls [stopListening] when it leaves the composition.
+ */
 class CampsiteInfoRepository {
     private val db = Firebase.firestore
     private val campsitesRef = db.collection("campsites")
     private val _campsites = mutableStateListOf<CampsiteInfo>()
 
+    /** The live campsite list, sorted by name and observed by Compose. */
     val campsites: List<CampsiteInfo>
         get() = _campsites
 
+    /** Whether the initial campsite list is still loading. */
     var isLoading by mutableStateOf(true)
         private set
+    /** The most recent list-loading error, or null when the listener succeeds. */
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
@@ -41,6 +48,12 @@ class CampsiteInfoRepository {
         }
     }
 
+    /**
+     * Reads a single campsite from the Firestore server.
+     *
+     * @param id The campsite's Firestore document ID.
+     * @param onResult Receives the campsite and an optional error message. Both are null if the document is missing.
+     */
     fun getCampsite(id: String, onResult: (CampsiteInfo?, String?) -> Unit) {
         campsitesRef.document(id).get(Source.SERVER)
             .addOnSuccessListener { document ->
@@ -53,6 +66,7 @@ class CampsiteInfoRepository {
             }
     }
 
+    /** Removes the live list listener when its owning page leaves the composition. */
     fun stopListening() {
         listener.remove()
     }

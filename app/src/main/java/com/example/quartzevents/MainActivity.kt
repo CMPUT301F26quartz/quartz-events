@@ -17,7 +17,6 @@ import com.example.quartzevents.model.UserProfile
 import com.example.quartzevents.ui.theme.QuartzEventsTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.graphics.Color
 
 
 class MainActivity : ComponentActivity() {
@@ -118,6 +117,11 @@ fun RoleHomeScreen(
     onSearch: () -> Unit,
     onLogout: () -> Unit
 ) {
+    if (profile.role == "entrant") {
+        EntrantHomeScreen(profile, onSearch, onLogout)
+        return
+    }
+
     val roleName = when (profile.role) {
         "entrant" -> "Entrant"
         "owner" -> "Campsite Owner"
@@ -138,12 +142,6 @@ fun RoleHomeScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (profile.role == "entrant") {
-            SearchCampsitesButton(onClick = onSearch)
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
         Text(
             text = "Role: $roleName"
         )
@@ -151,23 +149,5 @@ fun RoleHomeScreen(
         Button(onClick = onLogout) {
             Text("Log Out")
         }
-    }
-}
-// The future entrant dashboard can reuse this search entry.
-@Composable
-private fun SearchCampsitesButton(
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF254D3C),
-            contentColor = Color.White
-        )
-    ) {
-        Text(text = "Search Campsites")
     }
 }
