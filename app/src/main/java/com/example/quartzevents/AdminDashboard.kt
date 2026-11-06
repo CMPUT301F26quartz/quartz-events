@@ -1,3 +1,21 @@
+/**
+ * Showcases the admin's dashboard and acts as a gateway to allow the user to view and perform other tasks
+ *
+ * The dashboard screen has a logout button that signs the admin user out and takes them
+ * back to the login page. It has buttons for the admin to manage all campsites, manage all
+ * profiles, manage all images, and view the activity log
+ *
+ * Supported screens:
+ *  - manage campsites
+ *  - manage profiles
+ *  - manage images
+ *  - view activity log
+ *  - logout and return to sign in page
+ *
+ *  * @param onLogout to support logging out of the user's account
+ *  * @return None
+ */
+
 package com.example.quartzevents
 
 import androidx.compose.foundation.Image

@@ -1,4 +1,13 @@
-//TODO: add description
+/**
+ * Shows all user profiles, including the user's name and role, allows admin to remove a user
+ *
+ * Supported screens:
+ *  - profile details
+ *  - confirm remove user option (future implementation)
+ *
+ *  * @param back to support ability to return to the admin dashboard
+ *  * @return None
+ */
 
 package com.example.quartzevents
 
