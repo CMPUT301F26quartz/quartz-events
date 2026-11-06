@@ -17,7 +17,6 @@ import com.example.quartzevents.model.UserProfile
 import com.example.quartzevents.ui.theme.QuartzEventsTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
-import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -34,7 +33,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             QuartzEventsTheme {
                 QuartzEventsApp()
-
             }
         }
     }
@@ -152,7 +150,7 @@ fun RoleHomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (profile.role == "entrant") {
-            //SearchCampsitesButton(onClick = onSearch)
+            SearchCampsitesButton(onClick = onSearch)
 
             Spacer(modifier = Modifier.height(16.dp))
         }
