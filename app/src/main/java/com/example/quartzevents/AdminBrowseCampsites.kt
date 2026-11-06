@@ -56,13 +56,6 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
             }
         }
     }
-    //TODO: fix permissions for admin on firebase
-    if(owners.isEmpty()){
-        println("EMPTY")
-    }
-    else{
-        println("NOT EMPTY")
-    }
 
     Column(
         modifier = Modifier
