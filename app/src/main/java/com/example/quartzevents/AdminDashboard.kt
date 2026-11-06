@@ -83,6 +83,7 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
                     .background(Color(0xFF254D3C)),
                 contentAlignment = Alignment.Center
             ) {
+
                 Text(
                     text = "Admin Dashboard",
                     color = Color(0xFFFFFFFF),
