@@ -53,19 +53,6 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
             if (error != null) android.util.Log.e("Users", "Load failed: $error")
             else if (result != null) users = result
         }
-
-//        userRepository.getAllUsers() { result, error ->
-//            if (result != null) {
-//                users = result
-//            }
-//        }
-    }
-    //TODO: fix permissions for admin on firebase
-    if(users.isEmpty()){
-        println("EMPTY")
-    }
-    else{
-        println("NOT EMPTY")
     }
 
     Column(
