@@ -25,7 +25,17 @@ import com.example.quartzevents.OwnerFunctions.CampsiteRepository
 import com.example.quartzevents.Campsite
 
 
-
+/**
+ * Displays the owner dashboard.
+ * Shows registered campsites.
+ * Includes an add button.
+ * Handles navigation to details.
+ *
+ * @param profile The logged-in owner.
+ * @param onAddCampsiteClick Opens registration screen.
+ * @param onViewDetailsClick Passes the campsite ID.
+ * @param onLogout Logs the user out.
+ */
 
 private val QuartzGreen = Color(0xFF254D3C)
 private val QuartzWhite = Color(0xFFFFFFFF)
