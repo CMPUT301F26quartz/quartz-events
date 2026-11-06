@@ -134,7 +134,7 @@ fun RegisterCampsite(
 
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
                 Text(
-                    text = "Description",
+                    text = "Description/Amenities",
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF254D3C),
                     fontSize = 14.sp,
@@ -182,6 +182,31 @@ fun RegisterCampsite(
                         unfocusedBorderColor = Color.Transparent
                     )
                 )
+                Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                    Text(
+                        text = "Tags by comma",
+                        fontWeight = FontWeight.Bold,
+                        color = QuartzGreen,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
+                    )
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        placeholder = { Text("Forest, Lake, Hot tub etc", color = Color.Gray) },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFD9D9D9),
+                            unfocusedContainerColor = Color(0xFFD9D9D9),
+                            focusedBorderColor = QuartzGreen,
+                            unfocusedBorderColor = Color.Transparent
+                        )
+                    )
+                }
             }
         }
 

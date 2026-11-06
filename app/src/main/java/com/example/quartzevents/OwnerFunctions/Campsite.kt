@@ -11,5 +11,4 @@ data class Campsite(
     val maxOccupancy: String = "",
     val imageUrl: String = "",
     val tags: String = "",
-    val createdAt: Long = 0L
 )

@@ -25,20 +25,6 @@ class CampsiteRepository {
                 onResult(false, exception.message)
             }
     }
-    //gets every campsite currently listed.
-    fun getAllCampsites(
-        onResult: (List<Campsite>?, String?) -> Unit
-    ) {
-        db.collection("campsites")
-            .get()
-            .addOnSuccessListener { result ->
-                val campsites = result.toObjects(Campsite::class.java)
-                onResult(campsites, null)
-            }
-            .addOnFailureListener { exception ->
-                onResult(null, exception.message)
-            }
-    }
 
 
         // gets every campsite listed to the current logged in owner profile, can be reworked for admin too.
@@ -57,4 +43,16 @@ class CampsiteRepository {
                     onResult(null, exception.message)
                 }
         }
+
+    fun getCampsiteById(campsiteId: String, onResult: (Campsite?, String?) -> Unit) {
+        db.collection("campsites").document(campsiteId).get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    onResult(document.toObject(Campsite::class.java), null)
+                } else {
+                    onResult(null, "Not found")
+                }
+            }
+            .addOnFailureListener { onResult(null, it.message) }
+    }
     }

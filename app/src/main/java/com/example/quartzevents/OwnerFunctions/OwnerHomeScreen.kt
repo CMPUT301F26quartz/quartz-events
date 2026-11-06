@@ -1,6 +1,7 @@
 package com.example.quartzevents.OwnerFunctions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -35,11 +36,9 @@ private val QuartzCream = Color(0xFFF7F5ED)
 fun OwnerHomeScreen (
     profile: UserProfile,
     onAddCampsiteClick: () -> Unit,
-    onSettingsClick: () -> Unit,
+    onViewDetailsClick: (String) -> Unit,
     onLogout: () -> Unit) {
 
-    var isCreatingCampsite by rememberSaveable { mutableStateOf(false) }
-    var isViewingSettings by rememberSaveable { mutableStateOf(false) }
 
     val repository = remember { CampsiteRepository() }
     var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
@@ -123,7 +122,6 @@ fun OwnerHomeScreen (
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
-                            .height(110.dp)
                             .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
                     ) {
                         Column {
@@ -148,7 +146,11 @@ fun OwnerHomeScreen (
                                 Text(
                                     text = "View Details →",
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    modifier = Modifier
+                                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                                        .clickable{
+                                            println(onViewDetailsClick(campsite.id))
+                                        },
                                     color = Color(0xFF254D3C)
                                 )
                             }
