@@ -33,8 +33,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             QuartzEventsTheme {
-//                QuartzEventsApp()
-                AdminDashboardScreen()
+                QuartzEventsApp()
+//                AdminDashboardScreen()
             }
         }
     }
@@ -143,6 +143,9 @@ fun RoleHomeScreen(
             SearchCampsitesButton(onClick = onSearch)
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+        else if(profile.role == "admin"){
+            AdminDashboardScreen()
         }
 
         Text(
