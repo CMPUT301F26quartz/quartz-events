@@ -33,12 +33,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// TODO: ASK IF CHANGE PASSWORD IS NEEDED IN EDIT PROFILE!!!
-
 private val darkGreen = Color(0xFF234F40)
 private val backgroundCream = Color(0xFFF8F6ED)
 private val fieldGray = Color(0xFFD9D9D9)
 
+/**
+ * Displays the signed-in user's personal information and allows them to edit their name,
+ * username, email, and phone number.
+ *
+ * Validates required fields, email format, and phone number before submitting the updated profile.
+ *
+ * @param profile The signed-in user's current profile information.
+ * @param onBack Callback invoked when returning to the Profile screen.
+ * @param onSave Callback invoked with the updated UserProfile
+ * after all input validations pass.
+ */
 @Composable
 fun EditProfileScreen(
     profile: UserProfile,
@@ -306,7 +315,7 @@ fun EditProfileScreen(
                     val updatedProfile = profile.copy(
                         name = "${firstName.trim()} ${lastName.trim()}",
                         username = username.trim(),
-                        //email = email.trim()
+                        email = email.trim(),
                         phoneNumber = phoneNumber.trim()
                     )
 

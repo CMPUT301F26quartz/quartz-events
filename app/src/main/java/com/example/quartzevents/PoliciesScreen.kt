@@ -36,6 +36,15 @@ private val darkGreen = Color(0xFF234F40)
 private val backgroundCream = Color(0xFFF8F6ED)
 private val cardGray = Color(0xFFD9D9D9)
 
+/**
+ * Displays the application's policies and guidelines in a scrollable list.
+ *
+ * Provides information about lottery participation, reservations, cancellations, respectful
+ * conduct, privacy, and account violations.
+ * Users can return to the Profile screen using the back button.
+ *
+ * @param onBack Callback invoked when returning to the Profile screen.
+ */
 @Composable
 fun PoliciesScreen(onBack: () -> Unit) {
     BackHandler(onBack = onBack)
