@@ -38,6 +38,15 @@ private val QuartzCream = Color(0xFFF7F5ED)
 private val QuartzFieldGray = Color(0xFFD9D9D9)
 
 
+/**
+ * Shows specific campsite details.
+ * Fetches data using the ID.
+ * Displays location and tags.
+ *
+ * @param campsiteId The unique campsite ID.
+ * @param onBack Returns to previous screen.
+ */
+
 @Composable
 fun CampsiteDetails(
     campsiteId: String,
