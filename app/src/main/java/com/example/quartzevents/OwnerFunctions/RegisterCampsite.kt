@@ -28,6 +28,16 @@ private val QuartzGreen = Color(0xFF254D3C)
 private val QuartzWhite = Color(0xFFFFFFFF)
 private val QuartzCream = Color(0xFFF7F5ED)
 
+
+/**
+ * Displays a new campsite form.
+ * Takes user input.
+ * Saves to Firestore.
+ *
+ * @param onBack Cancels and goes back.
+ * @param onSaveSuccess Triggers after saving.
+ */
+
 @Composable
 fun RegisterCampsite(
     onBack: () -> Unit,
@@ -88,7 +98,7 @@ fun RegisterCampsite(
                     fontSize = 14.sp,
                     modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
                 )
-                OutlinedTextField(
+                OutlinedTextField( // referenced https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-outlined-text-field.html and https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-outlined-text-field-defaults/colors.html
                     value = campsiteName,
                     onValueChange = { campsiteName = it },
                     placeholder = { Text("Enter", color = Color.Gray) },

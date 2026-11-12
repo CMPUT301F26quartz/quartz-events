@@ -4,6 +4,12 @@ import com.google.firebase.auth.FirebaseAuth
 import com.example.quartzevents.model.UserProfile
 import com.google.firebase.firestore.FirebaseFirestore
 
+/**
+ * Handles user authentication through Firebase Authentication
+ * and stores user profiles in Firestore.
+ *
+ * Outstanding issues: None currently known.
+ */
 class AuthRepository {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()

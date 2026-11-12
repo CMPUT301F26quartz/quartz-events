@@ -47,6 +47,11 @@ import androidx.compose.runtime.setValue
 
 @Composable
 fun AdminBrowseCampsitesScreen(back: () -> Unit){
+    /*
+    asked ChatGPT (GPT-6 Luna) how to create an updatable list from a collection of firestore documents in kotlin
+     it responded with a block of code in this format (it is repeated throughout multiple files with different variables
+     such)
+     */
     val campsiteRepository = remember{ CampsiteRepository() }
     var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     LaunchedEffect(Unit) {
@@ -56,6 +61,7 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
             }
         }
     }
+
 
     val userRepository = remember{ UserRepository() }
     var owners by remember { mutableStateOf<List<Owner>>(emptyList()) }

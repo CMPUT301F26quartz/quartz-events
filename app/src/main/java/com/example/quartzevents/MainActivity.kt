@@ -1,5 +1,9 @@
 package com.example.quartzevents
 
+/**
+ * Main entry point of the application.
+ * Initializes Firebase and launches the app UI.
+ */
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -19,6 +23,10 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 
+import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
+import com.example.quartzevents.OwnerFunctions.RegisterCampsite
+import com.example.quartzevents.OwnerFunctions.CampsiteDetails
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,11 +42,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             QuartzEventsTheme {
                 QuartzEventsApp()
+//                AdminDashboardScreen()
             }
         }
     }
 }
 
+/**
+ * Manages authentication and displays screens based on the user's role.
+ */
 @Composable
 fun QuartzEventsApp() {
     val repository = remember { AuthRepository() }
@@ -48,10 +60,13 @@ fun QuartzEventsApp() {
     var isLoading by remember {
         mutableStateOf(true)
     }
-    // TODO: Replace with shared navigation when the dashboard is ready.
     var isSearchScreenVisible by rememberSaveable {
         mutableStateOf(false)
     }
+    var isCreatingCampsite by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -94,31 +109,55 @@ fun QuartzEventsApp() {
             )
         }
 
-        currentProfile?.role == "admin" -> {
-            AdminDashboardScreen(onLogout = {
-                repository.logout()
-                currentProfile = null
-            })
-        }
-
 
         // Show screen based on user role
-        else-> {
-            RoleHomeScreen(
-                profile = currentProfile!!,
-                onSearch = {
-                    isSearchScreenVisible = true
-                },
-                onLogout = {
-                    repository.logout()
-                    isSearchScreenVisible = false
-                    currentProfile = null
+        //main owner switchboard
+        else -> {
+            if (currentProfile?.role == "owner") {
+
+                if (selectedCampsiteId != null) {
+                    CampsiteDetails(
+                        campsiteId = selectedCampsiteId!!,
+                        onBack = { selectedCampsiteId = null }
+                    )
+                } else if (isCreatingCampsite) {
+                    RegisterCampsite(
+                        onBack = { isCreatingCampsite = false },
+                        onSaveSuccess = { isCreatingCampsite = false }
+                    )
+                } else {
+                    OwnerHomeScreen(
+                        profile = currentProfile!!,
+                        onAddCampsiteClick = { isCreatingCampsite = true },
+                        onViewDetailsClick = { id -> selectedCampsiteId = id },
+                        onLogout = {
+                            repository.logout()
+                            currentProfile = null
+                        }
+                    )
                 }
-            )
+
+            } else {
+
+                RoleHomeScreen(
+                    profile = currentProfile!!,
+                    onSearch = {
+                        isSearchScreenVisible = true
+                    },
+                    onLogout = {
+                        repository.logout()
+                        isSearchScreenVisible = false
+                        currentProfile = null
+                    }
+                )
+            }
         }
     }
 }
 
+/**
+ * Displays the home screen for the logged-in user.
+ */
 @Composable
 fun RoleHomeScreen(
     profile: UserProfile,
@@ -146,6 +185,15 @@ fun RoleHomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (profile.role == "entrant") {
+            SearchCampsitesButton(onClick = onSearch)
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        else if(profile.role == "admin"){
+            //AdminDashboardScreen()
+        }
+
+        if (profile.role == "owner") {
             SearchCampsitesButton(onClick = onSearch)
 
             Spacer(modifier = Modifier.height(16.dp))

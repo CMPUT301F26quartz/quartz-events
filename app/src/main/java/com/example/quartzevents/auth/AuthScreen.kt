@@ -1,5 +1,9 @@
 package com.example.quartzevents.auth
 
+/**
+ * Provides the login and registration screens for entrants and campsite owners.
+ * Handles user input, form validation, and authentication through AuthRepository.
+ */
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
