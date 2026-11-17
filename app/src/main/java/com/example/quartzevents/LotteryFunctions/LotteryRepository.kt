@@ -1,16 +1,13 @@
+package com.example.quartzevents.LotteryFunctions
+
+import com.example.quartzevents.Entrant
+import com.google.firebase.firestore.FirebaseFirestore
+
 /**
  * Repository class for Lottery objects and their associated collection in the database
  *
  * Connects to the database to create and maintain a list of Lottery objects from the Lotteries collection.
  */
-
-package com.example.quartzevents
-
-import androidx.compose.runtime.mutableStateListOf
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
-
 class LotteryRepository {
 
     private val db = FirebaseFirestore.getInstance()
@@ -84,8 +81,21 @@ class LotteryRepository {
         val ents = lottery.entrants
         ents.add(entrant)
 
-        updateLottery(Lottery(lottery.campsites,lottery.name,
-            lottery.registrationStart,lottery.registrationEnd,lottery.bookingStart,lottery.bookingEnd,lottery.capacity,lottery.id,ents, lottery.winNum))
+        updateLottery(
+            Lottery(
+                lottery.campsites,
+                lottery.name,
+                lottery.registrationStart,
+                lottery.registrationEnd,
+                lottery.bookingStart,
+                lottery.bookingEnd,
+                lottery.capacity,
+                lottery.id,
+                ents,
+                lottery.winNum,
+                lottery.winners
+            )
+        )
     }
 
     /**
@@ -98,8 +108,21 @@ class LotteryRepository {
         val ents = lottery.entrants
         ents.remove(entrant)
 
-        updateLottery(Lottery(lottery.campsites,lottery.name,
-            lottery.registrationStart,lottery.registrationEnd,lottery.bookingStart,lottery.bookingEnd,lottery.capacity,lottery.id,ents, lottery.winNum))
+        updateLottery(
+            Lottery(
+                lottery.campsites,
+                lottery.name,
+                lottery.registrationStart,
+                lottery.registrationEnd,
+                lottery.bookingStart,
+                lottery.bookingEnd,
+                lottery.capacity,
+                lottery.id,
+                ents,
+                lottery.winNum,
+                lottery.winners
+            )
+        )
     }
 
 

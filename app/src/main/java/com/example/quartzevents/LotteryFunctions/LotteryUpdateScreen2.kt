@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.LotteryFunctions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +38,10 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Campsite
+import com.example.quartzevents.Date
+import com.example.quartzevents.Entrant
+import com.example.quartzevents.R
 
 @Composable
 fun LotteryUpdateScreen2(
@@ -84,14 +88,10 @@ fun LotteryUpdateScreen2(
                 }
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.arrow_back_24px),
+                    painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
                     tint = MaterialTheme.colorScheme.secondary
                 )
-            }
-
-            if (backB) {
-                LotteryUpdateScreen1(lotteries,campsites,lottery, {lottery -> Unit})
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -344,18 +344,20 @@ fun LotteryUpdateScreen2(
                             dateFormat.matches(bookStartInput) &&
                             dateFormat.matches(bookEndInput)
                         ) {
-                            onUpdateLottery(Lottery(
-                                selectedSites,
-                                nameInput,
-                                Date(regStartInput),
-                                Date(regEndInput),
-                                Date(bookStartInput),
-                                Date(bookEndInput),
-                                capacityInput,
-                                lottery.id,
-                                entrantsInput,
-                                winnersInput
-                                ))
+                            onUpdateLottery(
+                                Lottery(
+                                    selectedSites,
+                                    nameInput,
+                                    Date(regStartInput),
+                                    Date(regEndInput),
+                                    Date(bookStartInput),
+                                    Date(bookEndInput),
+                                    capacityInput,
+                                    lottery.id,
+                                    entrantsInput,
+                                    winnersInput
+                                )
+                            )
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -370,5 +372,8 @@ fun LotteryUpdateScreen2(
                 }
             }
         }
+    }
+    if (backB) {
+        LotteryUpdateScreen1(lotteries,campsites,lottery, {lottery: Lottery -> Unit})
     }
 }

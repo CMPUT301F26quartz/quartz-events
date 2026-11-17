@@ -5,7 +5,7 @@
  *
  * Currently does not actually create the lottery in the database for an unknown reason
  */
-package com.example.quartzevents
+package com.example.quartzevents.LotteryFunctions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,15 +18,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,6 +45,10 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Campsite
+import com.example.quartzevents.Date
+import com.example.quartzevents.Entrant
+import com.example.quartzevents.R
 
 /**
  * Collects remaining lottery info necessary for creation of lottery via a series of text fields
@@ -67,7 +66,7 @@ fun LotteryCreationScreen2(
     lotteries: List<Lottery>, // lotteries list - connects to db
     campsites: List<Campsite>, // Sites explicitly owned by the Owner
     selectedSites: MutableList<Campsite>,
-    onAddLottery: (List<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit
+    onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit
 ) {
     var backB by remember { mutableStateOf(false) } // used in button presses for changing screens
     var regStartInput by remember { mutableStateOf("") }
@@ -77,7 +76,8 @@ fun LotteryCreationScreen2(
     var nameInput by remember { mutableStateOf("") }
     var capacityInput by remember { mutableIntStateOf(0) }
     var entrantsInput: MutableList<Entrant> = mutableListOf()
-    var winnersInput by remember {mutableIntStateOf(0)}
+    var winnersInput: MutableList<Entrant> = mutableListOf()
+    var winNumInput by remember {mutableIntStateOf(0)}
     val dateFormat =
         Regex("""^(\d{4})-(0[1-9]|1[0-2]|[1-9])-([1-9]|0[1-9]|[1-2]\d|3[0-1])$""") // for checking if entered date is in the correct format: from https://regex101.com/library/oE3yO7 and https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.text/-regex/
     val superscript = SpanStyle(
@@ -106,14 +106,10 @@ fun LotteryCreationScreen2(
                 }
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.arrow_back_24px),
+                    painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
                     tint = MaterialTheme.colorScheme.secondary
                 )
-            }
-
-            if (backB) {
-                LotteryCreationScreen1(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -324,8 +320,8 @@ fun LotteryCreationScreen2(
                 )
 
                 OutlinedTextField(
-                    value = winnersInput.toString(),
-                    onValueChange = { winnersInput = it.toInt() },
+                    value = winNumInput.toString(),
+                    onValueChange = { winNumInput = it.toInt() },
                     singleLine = true,
                     modifier = Modifier.size(320.dp, 40.dp)
                         .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
@@ -360,7 +356,7 @@ fun LotteryCreationScreen2(
                             nameInput != "" &&
                             selectedSites.isNotEmpty() &&
                             entrantsInput.isNotEmpty() &&
-                            winnersInput != 0 &&
+                            winNumInput != 0 &&
                             dateFormat.matches(regStartInput) &&
                             dateFormat.matches(regEndInput) &&
                             dateFormat.matches(bookStartInput) &&
@@ -374,7 +370,9 @@ fun LotteryCreationScreen2(
                                 Date(bookStartInput),
                                 capacityInput,
                                 entrantsInput,
+                                winNumInput,
                                 winnersInput)
+
 
                         }
                     },
@@ -390,5 +388,11 @@ fun LotteryCreationScreen2(
                 }
             }
         }
+    }
+    if (backB) {
+        LotteryCreationScreen1(
+            lotteries,
+            campsites,
+            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit })
     }
 }

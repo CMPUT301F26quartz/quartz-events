@@ -13,9 +13,8 @@
  * lottery associated with the campsite selected.
  */
 
-package com.example.quartzevents
+package com.example.quartzevents.LotteryFunctions
 
-import android.R.attr.checked
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +39,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,6 +49,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Campsite
+import com.example.quartzevents.Date
+import com.example.quartzevents.Entrant
+import com.example.quartzevents.R
 
 /**
  * The main UI body, contains all UI elements, including the list of CampsiteListing objects
@@ -74,14 +76,14 @@ import androidx.compose.ui.unit.sp
 fun LotteryListCampsiteSelectScreen(
     lotteries: List<Lottery>, // lotteries list - connects to db
     campsites: List<Campsite>, // Sites explicitly owned by the Owner
-    onAddLottery: (List<Campsite>,String,Date,Date,Date,Date,Int,MutableList<Entrant>,Int) -> Unit,
+    onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit,
     onUpdateLottery: (Lottery) -> Unit
 ){
     var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
     var creationScreen by remember {mutableStateOf(false)}
     var updateScreen by remember {mutableStateOf(false)}
     var campInfo: MutableList<MutableMap<String,MutableList<Date>>> = mutableListOf<MutableMap<String,MutableList<Date>>>()
-    var selectedSite: Campsite = Campsite("","","","","","","","")
+    var selectedSite: Campsite = Campsite("", "", "", "", "", "", "", "")
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -101,15 +103,12 @@ fun LotteryListCampsiteSelectScreen(
                 }
             ){
                 Icon(
-                    painter = painterResource(R.drawable.arrow_back_24px),
+                    painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
                     tint = MaterialTheme.colorScheme.secondary
                 )
             }
 
-            if (backB) {
-                // previous screen function goes here
-            }
 
             Spacer(modifier = Modifier.padding(15.dp))
 
@@ -157,7 +156,9 @@ fun LotteryListCampsiteSelectScreen(
                         CampsiteListing( // call composable function that builds each lottery display
                             siteInfo = siteInfo,
                             onAddSite = {selectedSite = it},
-                            onRemoveSite = {selectedSite = Campsite("","","","","","","","")},
+                            onRemoveSite = {selectedSite =
+                                Campsite("", "", "", "", "", "", "", "")
+                            },
                             selectedSite = selectedSite,
                             sites = campsites
                         )
@@ -194,7 +195,7 @@ fun LotteryListCampsiteSelectScreen(
                         if (updateScreen) {
                             for (lottery in lotteries) {
                                 if(selectedSite in lottery.campsites) {
-                                    LotteryUpdateScreen1(lotteries,campsites,lottery,{lottery -> Unit})
+                                    LotteryUpdateScreen1(lotteries,campsites,lottery,{lottery: Lottery -> Unit})
                                 }
                             }
                         }
@@ -234,7 +235,13 @@ fun LotteryListCampsiteSelectScreen(
         }
     }
     if (creationScreen){
-        LotteryCreationScreen1(lotteries, campsites, {campsites, name, regS, regE, bookS, bookE, cap, entrants, winners-> Unit})
+        LotteryCreationScreen1(
+            lotteries,
+            campsites,
+            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit })
+    }
+    if (backB) {
+        // previous screen function goes here
     }
 }
 
