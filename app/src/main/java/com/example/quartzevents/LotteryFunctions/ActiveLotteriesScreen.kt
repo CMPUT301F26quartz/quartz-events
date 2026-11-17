@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.LotteryFunctions
 
 
 import androidx.compose.foundation.background
@@ -33,6 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import com.example.quartzevents.Entrant
+import com.example.quartzevents.R
 
 @Composable
 fun ActiveLotteriesScreen(
@@ -61,7 +63,7 @@ fun ActiveLotteriesScreen(
                 }
             ){
                 Icon(
-                    painter = painterResource(R.drawable.arrow_back_24px),
+                    painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
                     tint = MaterialTheme.colorScheme.secondary
                 )
@@ -117,7 +119,7 @@ fun ActiveLotteriesScreen(
                             HorizontalDivider()
                         }
                         if(nextScreen) {
-                            LotteryDetailScreen({lottery, user -> Unit},lotteries,lottery,campsite, user)
+                            LotteryDetailScreen({lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
                         }
                     }
                 }
