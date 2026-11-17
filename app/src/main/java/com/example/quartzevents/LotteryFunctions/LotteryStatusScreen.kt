@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.LotteryFunctions
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -31,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.Instant
 import androidx.compose.material3.OutlinedButton
+import com.example.quartzevents.Date
+import com.example.quartzevents.Entrant
+import com.example.quartzevents.R
 
 @Composable
 fun LotteryStatusScreen (
@@ -61,14 +64,10 @@ fun LotteryStatusScreen (
                 }
             ){
                 Icon(
-                    painter = painterResource(R.drawable.arrow_back_24px),
+                    painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
                     tint = MaterialTheme.colorScheme.secondary
                 )
-            }
-
-            if(backB){
-                LotteryDetailScreen({lottery, user -> Unit},lotteries,lottery,campsite, user)
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -237,5 +236,8 @@ fun LotteryStatusScreen (
                 )
             }
         }
+    }
+    if(backB){
+        LotteryDetailScreen({lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
     }
 }

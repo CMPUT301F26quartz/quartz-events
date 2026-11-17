@@ -10,7 +10,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,11 +20,10 @@ import androidx.compose.ui.unit.sp
 import com.example.quartzevents.model.UserProfile
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.quartzevents.OwnerFunctions.CampsiteRepository
 import com.example.quartzevents.Campsite
-import com.example.quartzevents.Lottery
-import com.example.quartzevents.LotteryListCampsiteSelectScreen
-import com.example.quartzevents.LotteryRepository
+import com.example.quartzevents.LotteryFunctions.Lottery
+import com.example.quartzevents.LotteryFunctions.LotteryListCampsiteSelectScreen
+import com.example.quartzevents.LotteryFunctions.LotteryRepository
 
 
 private val QuartzGreen = Color(0xFF254D3C)
@@ -209,7 +207,7 @@ fun OwnerHomeScreen (
         LotteryListCampsiteSelectScreen(
             lotteries,
             campsites,
-            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winners -> Unit },
+            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit },
             { lotteries -> Unit })
     }
 }
