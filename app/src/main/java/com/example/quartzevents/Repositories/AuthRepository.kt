@@ -1,7 +1,7 @@
-package com.example.quartzevents.auth
+package com.example.quartzevents.Repositories
 
-import com.google.firebase.auth.FirebaseAuth
 import com.example.quartzevents.model.UserProfile
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 /**

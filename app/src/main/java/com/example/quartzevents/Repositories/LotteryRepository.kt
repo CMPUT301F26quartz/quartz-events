@@ -1,6 +1,7 @@
-package com.example.quartzevents.LotteryFunctions
+package com.example.quartzevents.Repositories
 
-import com.example.quartzevents.Entrant
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.Classes.Lottery
 import com.google.firebase.firestore.FirebaseFirestore
 
 /**

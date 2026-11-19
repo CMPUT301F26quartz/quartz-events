@@ -31,8 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.Instant
 import androidx.compose.material3.OutlinedButton
-import com.example.quartzevents.Date
-import com.example.quartzevents.Entrant
+import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 
 @Composable
@@ -238,6 +239,6 @@ fun LotteryStatusScreen (
         }
     }
     if(backB){
-        LotteryDetailScreen({lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
+        LotteryDetailScreen({ lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
     }
 }

@@ -15,13 +15,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.quartzevents.auth.AuthRepository
+import com.example.quartzevents.Repositories.AuthRepository
 import com.example.quartzevents.auth.AuthScreen
 import com.example.quartzevents.model.UserProfile
 import com.example.quartzevents.ui.theme.QuartzEventsTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
+import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
@@ -196,9 +198,6 @@ fun RoleHomeScreen(
             SearchCampsitesButton(onClick = onSearch)
 
             Spacer(modifier = Modifier.height(16.dp))
-        }
-        else if(profile.role == "admin"){
-            //AdminDashboardScreen()
         }
 
         if (profile.role == "owner") {
