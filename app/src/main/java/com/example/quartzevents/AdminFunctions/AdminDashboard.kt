@@ -17,7 +17,7 @@
  */
 
 
-package com.example.quartzevents
+package com.example.quartzevents.AdminFunctions
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

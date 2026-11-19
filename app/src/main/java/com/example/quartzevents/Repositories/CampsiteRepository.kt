@@ -1,7 +1,6 @@
-//TODO: add description
+package com.example.quartzevents.Repositories
 
-package com.example.quartzevents
-
+import com.example.quartzevents.Campsite
 import com.google.firebase.firestore.FirebaseFirestore
 
 class CampsiteRepository {

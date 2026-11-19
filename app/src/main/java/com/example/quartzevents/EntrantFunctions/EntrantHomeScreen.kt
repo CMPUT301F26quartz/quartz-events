@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.EntrantFunctions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

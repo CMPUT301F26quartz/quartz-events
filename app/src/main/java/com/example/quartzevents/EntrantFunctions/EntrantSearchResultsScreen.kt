@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.EntrantFunctions
 
 // US 01.01.03 / 01.01.04: displays matching campsites and their summary information.
 
@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Classes.Date
 
 private val darkGreen = Color(0xFF244D3D)
 private val backgroundCream = Color(0xFFF7F5ED)

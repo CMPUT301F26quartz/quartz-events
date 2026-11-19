@@ -10,7 +10,7 @@
  * @property uid the user's id
  */
 
-package com.example.quartzevents
+package com.example.quartzevents.Classes
 
 abstract class User(
     var email: String = "",

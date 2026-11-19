@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.EntrantFunctions
 
 // US 01.01.05: reads a campsite by its Firestore document ID and displays its details.
 
@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.Repositories.CampsiteInfoRepository
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore

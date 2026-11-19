@@ -9,7 +9,7 @@
  * @property uid the user's id
  */
 
-package com.example.quartzevents
+package com.example.quartzevents.Classes
 
 class Entrant(
     email: String = "",

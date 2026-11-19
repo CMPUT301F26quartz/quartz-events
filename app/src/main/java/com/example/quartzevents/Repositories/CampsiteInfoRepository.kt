@@ -1,13 +1,15 @@
-package com.example.quartzevents
+package com.example.quartzevents.Repositories
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import com.example.quartzevents.EntrantFunctions.CampsiteInfo
+import com.example.quartzevents.EntrantFunctions.readCampsite
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 /**
  * Provides shared Firestore access to campsite lists and individual campsite details.
