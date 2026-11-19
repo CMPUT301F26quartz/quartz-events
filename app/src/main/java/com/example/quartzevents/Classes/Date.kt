@@ -6,7 +6,7 @@
  * @property date a string representation of date
  */
 
-package com.example.quartzevents
+package com.example.quartzevents.Classes
 
 import java.time.LocalDate
 import java.time.format.DateTimeParseException

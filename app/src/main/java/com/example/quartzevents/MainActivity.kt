@@ -100,6 +100,12 @@ fun QuartzEventsApp() {
                 }
             )
         }
+        currentProfile?.role == "admin" -> {
+            AdminDashboardScreen(onLogout = {
+                repository.logout()
+                currentProfile = null
+            })
+        }
 
         currentProfile?.role == "entrant" && isSearchScreenVisible -> {
             EntrantSearchScreen(
@@ -113,6 +119,8 @@ fun QuartzEventsApp() {
         // Show screen based on user role
         //main owner switchboard
         else -> {
+
+
             if (currentProfile?.role == "owner") {
 
                 if (selectedCampsiteId != null) {

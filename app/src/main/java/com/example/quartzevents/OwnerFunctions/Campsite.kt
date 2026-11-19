@@ -17,6 +17,8 @@
 
 package com.example.quartzevents
 
+import com.example.quartzevents.Classes.Reservation
+
 
 data class Campsite(
     val id: String = "",

@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.EntrantFunctions
 
 //US 01.12.01 As an entrant, I want to view campsite details by scanning the promotional QR code.
 
@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import com.example.quartzevents.Repositories.CampsiteInfoRepository
 
 /**
  * Extracts a campsite document ID from a quartz://campsite/{id} link.

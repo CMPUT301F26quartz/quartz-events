@@ -63,7 +63,6 @@ class AdminTest {
 
     }
 
-
     @Test
     fun admin_dashboard_to_manage_profiles(){
         composeTestRule

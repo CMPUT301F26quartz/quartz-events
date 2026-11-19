@@ -1,16 +1,16 @@
 /**
- * Shows all user profiles, including the user's name and role, allows admin to remove a user
+ * Shows all campsites, including the user's name and role, allows admin to remove a campsite
  *
  * Supported screens:
- *  - profile details
- *  - confirm remove user option (future implementation)
+ *  - campsite details
+ *  - confirm remove campsite option (future implementation)
  *
  *  * @param back to support ability to return to the admin dashboard
  *  * @return None
  */
 
 
-package com.example.quartzevents
+package com.example.quartzevents.AdminFunctions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,38 +21,60 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextDecoration
+import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Owner
+import com.example.quartzevents.Repositories.CampsiteRepository
+import com.example.quartzevents.Repositories.UserRepository
 
 @Composable
-fun AdminBrowseProfilesScreen(back: () -> Unit){
-    val userRepository = remember{ UserRepository() }
-    var users by remember { mutableStateOf<List<User>>(emptyList()) }
+fun AdminBrowseCampsitesScreen(back: () -> Unit){
+    /*
+    asked ChatGPT (GPT-6 Luna) how to create an updatable list from a collection of firestore documents in kotlin
+     it responded with a block of code in this format (it is repeated throughout multiple files with different variables
+     such)
+     */
+    val campsiteRepository = remember{ CampsiteRepository() }
+    var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     LaunchedEffect(Unit) {
-        userRepository.getAllUsers { result, error ->
-            if (error != null) android.util.Log.e("Users", "Load failed: $error")
-            else if (result != null) users = result
+        campsiteRepository.getAllCampsites() { result, error ->
+            if (result != null) {
+                campsites = result
+            }
+        }
+    }
+
+
+    val userRepository = remember{ UserRepository() }
+    var owners by remember { mutableStateOf<List<Owner>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        userRepository.getAllOwners() { result, error ->
+            if (result != null) {
+                owners = result
+            }
         }
     }
 
@@ -60,10 +82,9 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F6ED))
-            .verticalScroll(rememberScrollState())
             .safeDrawingPadding()
             .imePadding(),
-    ) {
+    ){
         //Banner Title
         Box(
             modifier = Modifier
@@ -80,16 +101,16 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
                         color = Color(0xFFFFFFFF),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 14.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp)
                     )
                 }
                 Text(
-                    text = "Manage Profiles",
+                    text = "Manage Campsites",
                     color = Color(0xFFFFFFFF),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
-                        .padding(vertical = 8.dp, horizontal = 10.dp)
+                        .padding(vertical = 8.dp, horizontal = 5.dp)
                 )
             }
         }//end Banner Box
@@ -97,7 +118,7 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
         //Title 2
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = "Registered Profiles",
+            text = "Registered Campsites",
             color = Color(0xFF244D3D),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
@@ -105,42 +126,56 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
         )
         Spacer(modifier = Modifier.height(10.dp))
 
-
-        //for preview purposes
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            for(user in users){
+            for(campsite in campsites){
+                //finding campsite owner
+                var ownerName:String? = null
+                for(owner in owners){
+                    if(owner.uid == campsite.ownerId){
+                        ownerName = owner.name
+                    }
+                }
+
+                //drawing one box for the campsite's data to be written in
                 Box(
                     modifier = Modifier
                         .size(350.dp, 105.dp)
                         .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
                 ) {
                     Column {
-                        //user name
+                        //Campsite name
                         Text(
-                            text = user.name,
+                            text = campsite.name,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             modifier = Modifier.padding(start = 15.dp, top = 15.dp)
                         )
-                        //user role
-                        Text(
-                            text = "Role: ${user.role}",
-                            fontSize = 15.sp,
-                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
-                        )
+                        Row {
+                            //campsite location
+                            Text(
+                                text = campsite.location,
+                                fontSize = 15.sp,
+                                modifier = Modifier.padding(start = 15.dp, top = 5.dp)
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Owner: $ownerName",
+                                fontSize = 15.sp,
+                                modifier = Modifier.padding(start = 15.dp, top = 5.dp)
+                            )
+                        }
                     }
-
-                    //TODO: add violation status
 
                     //view details
                     Text(
                         //TODO: make "View Details" work
                         //TODO: lead to opening the details page
                         text = "View Details >>",
-                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+                        textDecoration = TextDecoration.Underline,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -165,5 +200,7 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
                 Spacer(modifier = Modifier.height(10.dp))
             }//end loop
         }
+
+
     }
 }
