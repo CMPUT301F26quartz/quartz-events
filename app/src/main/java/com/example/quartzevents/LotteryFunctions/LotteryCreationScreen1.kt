@@ -45,6 +45,7 @@ import com.example.quartzevents.Campsite
 import com.example.quartzevents.Date
 import com.example.quartzevents.Entrant
 import com.example.quartzevents.R
+import com.google.firebase.firestore.FirebaseFirestore
 
 /**
  * This function is the main controlling function for this screen
@@ -122,6 +123,15 @@ fun LotteryCreationScreen1(
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
+                Text(
+                    "Your Campsites:",
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
@@ -137,7 +147,36 @@ fun LotteryCreationScreen1(
                     }
                 }
 
+                Text(
+                    "Other Campsites:",
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
+                LazyColumn( // List of available Lottery displays
+                    modifier = Modifier.fillMaxSize().weight(1f)
+                ) {
+                    itemsIndexed(campsites) { index, site ->
+                        SiteNameListing( // call composable function that builds each lottery display
+                            site = site,
+                            onAddSite = { selectedSites.add(it) },
+                            onRemoveSite = { selectedSites.remove(it) }
+                        )
+                        if (index < campsites.lastIndex) {
+                            HorizontalDivider()
+                        }
+                    }
+                }
+
+                Row (
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
                     Button(
                         onClick = {
                             if (selectedSites.isNotEmpty()) {
@@ -154,6 +193,7 @@ fun LotteryCreationScreen1(
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
+                }
             }
         }
     }
@@ -221,4 +261,21 @@ fun SiteNameListing (
             )
         }
     }
+}
+
+private fun getNonOwnerCampsites(
+    ownerId: String,
+    onResult: (List<Campsite>?, String?) -> Unit
+) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("campsites")
+        .whereNotEqualTo("ownerId", ownerId)
+        .get()
+        .addOnSuccessListener { result ->
+            val campsites = result.toObjects(Campsite::class.java)
+            onResult(campsites, null)
+        }
+        .addOnFailureListener { exception ->
+            onResult(null, exception.message)
+        }
 }
