@@ -7,6 +7,7 @@
  */
 package com.example.quartzevents.LotteryFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,8 +47,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Campsite
-import com.example.quartzevents.Date
-import com.example.quartzevents.Entrant
+import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 
 /**
@@ -66,7 +68,8 @@ fun LotteryCreationScreen2(
     lotteries: List<Lottery>, // lotteries list - connects to db
     campsites: List<Campsite>, // Sites explicitly owned by the Owner
     selectedSites: MutableList<Campsite>,
-    onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit
+    onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit,
+    onBack: () -> Unit
 ) {
     var backB by remember { mutableStateOf(false) } // used in button presses for changing screens
     var regStartInput by remember { mutableStateOf("") }
@@ -101,9 +104,7 @@ fun LotteryCreationScreen2(
         ) {
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
+                onClick = onBack
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
@@ -389,10 +390,11 @@ fun LotteryCreationScreen2(
             }
         }
     }
-    if (backB) {
-        LotteryCreationScreen1(
-            lotteries,
-            campsites,
-            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit })
-    }
+    BackHandler (onBack = onBack)
+//    if (backB) {
+//        LotteryCreationScreen1(
+//            lotteries,
+//            campsites,
+//            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit })
+//    }
 }

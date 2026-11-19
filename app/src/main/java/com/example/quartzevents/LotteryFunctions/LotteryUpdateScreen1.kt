@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 
 
@@ -143,7 +144,7 @@ fun LotteryUpdateScreen1(
         }
     }
     if (backB) {
-        LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners-> Unit}, {lottery -> Unit})
+        LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners-> Unit}, {lottery -> Unit},onBack = {})
     }
 }
 

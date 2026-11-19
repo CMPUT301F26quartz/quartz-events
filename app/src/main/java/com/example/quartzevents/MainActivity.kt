@@ -22,6 +22,8 @@ import com.example.quartzevents.ui.theme.QuartzEventsTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
+import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite

@@ -1,8 +1,6 @@
-package com.example.quartzevents.LotteryFunctions
+package com.example.quartzevents.Classes
 
 import com.example.quartzevents.Campsite
-import com.example.quartzevents.Date
-import com.example.quartzevents.Entrant
 
 class Lottery(
     val campsites: MutableList<Campsite> = mutableListOf(),

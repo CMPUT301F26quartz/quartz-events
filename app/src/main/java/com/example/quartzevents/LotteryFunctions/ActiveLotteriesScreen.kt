@@ -33,7 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import com.example.quartzevents.Entrant
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 
 @Composable
@@ -119,7 +120,7 @@ fun ActiveLotteriesScreen(
                             HorizontalDivider()
                         }
                         if(nextScreen) {
-                            LotteryDetailScreen({lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
+                            LotteryDetailScreen({ lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
                         }
                     }
                 }

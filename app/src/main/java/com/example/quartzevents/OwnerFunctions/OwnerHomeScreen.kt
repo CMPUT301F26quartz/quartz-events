@@ -21,9 +21,9 @@ import com.example.quartzevents.model.UserProfile
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.quartzevents.Campsite
-import com.example.quartzevents.LotteryFunctions.Lottery
+import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.LotteryFunctions.LotteryListCampsiteSelectScreen
-import com.example.quartzevents.LotteryFunctions.LotteryRepository
+import com.example.quartzevents.Repositories.LotteryRepository
 
 
 private val QuartzGreen = Color(0xFF254D3C)
@@ -208,6 +208,7 @@ fun OwnerHomeScreen (
             lotteries,
             campsites,
             { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit },
-            { lotteries -> Unit })
+            { lotteries -> Unit },
+            onBack = {})
     }
 }

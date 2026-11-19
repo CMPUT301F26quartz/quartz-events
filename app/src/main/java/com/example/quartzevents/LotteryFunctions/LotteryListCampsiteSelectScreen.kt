@@ -15,6 +15,7 @@
 
 package com.example.quartzevents.LotteryFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,9 +51,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Campsite
-import com.example.quartzevents.Date
-import com.example.quartzevents.Entrant
+import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.Classes.Lottery
+import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.R
+import com.example.quartzevents.model.UserProfile
 
 /**
  * The main UI body, contains all UI elements, including the list of CampsiteListing objects
@@ -77,7 +81,8 @@ fun LotteryListCampsiteSelectScreen(
     lotteries: List<Lottery>, // lotteries list - connects to db
     campsites: List<Campsite>, // Sites explicitly owned by the Owner
     onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit,
-    onUpdateLottery: (Lottery) -> Unit
+    onUpdateLottery: (Lottery) -> Unit,
+    onBack: () -> Unit
 ){
     var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
     var creationScreen by remember {mutableStateOf(false)}
@@ -135,17 +140,15 @@ fun LotteryListCampsiteSelectScreen(
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
                 for (lottery in lotteries) {
-                    for (site in lottery.campsites) {
-                        if (site in campsites) { // ensures a site is only listed if the owner owns it
-                            campInfo.add(
-                                mutableMapOf(
-                                    site.name to mutableListOf(
-                                        lottery.registrationStart,
-                                        lottery.registrationEnd
-                                    )
+                    for (site in lottery.campsites) { // ensures a site is only listed if the owner owns it
+                        campInfo.add(
+                            mutableMapOf(
+                                site.name to mutableListOf(
+                                    lottery.registrationStart,
+                                    lottery.registrationEnd
                                 )
                             )
-                        }
+                        )
                     }
                 }
 
@@ -238,11 +241,13 @@ fun LotteryListCampsiteSelectScreen(
         LotteryCreationScreen1(
             lotteries,
             campsites,
-            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit })
+            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit },
+            onBack = {})
     }
-    if (backB) {
-        // previous screen function goes here
-    }
+    BackHandler (onBack = onBack)
+//    if (backB) {
+//        OwnerHomeScreen(profile,{() -> Unit})
+//    }
 }
 
 
