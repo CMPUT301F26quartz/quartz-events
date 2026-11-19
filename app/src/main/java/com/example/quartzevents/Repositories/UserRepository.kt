@@ -1,7 +1,9 @@
-//TODO: add description
+package com.example.quartzevents.Repositories
 
-package com.example.quartzevents
-
+import com.example.quartzevents.Classes.Admin
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.Classes.Owner
+import com.example.quartzevents.Classes.User
 import com.google.firebase.firestore.FirebaseFirestore
 
 class UserRepository {

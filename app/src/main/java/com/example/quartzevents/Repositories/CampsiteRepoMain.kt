@@ -1,12 +1,13 @@
-package com.example.quartzevents
+package com.example.quartzevents.Repositories
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import com.example.quartzevents.Campsite
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 class CampsiteRepoMain {
     private val db = Firebase.firestore
@@ -46,7 +47,7 @@ class CampsiteRepoMain {
     }
 
     /** Returns a specific campsite using the campsite id */
-    fun getCampsite(id:String):Campsite?{
+    fun getCampsite(id:String): Campsite?{
         for (campsite in _campsites){
             if(campsite.id == id) return campsite
         }

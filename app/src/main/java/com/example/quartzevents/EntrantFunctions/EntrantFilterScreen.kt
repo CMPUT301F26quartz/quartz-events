@@ -1,4 +1,4 @@
-package com.example.quartzevents
+package com.example.quartzevents.EntrantFunctions
 
 // US 01.01.02: edits a draft of campsite filters and returns it only when Apply is pressed.
 
@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.ui.theme.QuartzEventsTheme
 
 private val darkGreen = Color(0xFF244D3D)

@@ -1,3 +1,5 @@
+package com.example.quartzevents.Classes
+
 /**
  * Represents an Admin user, stores the user's information.
  *
@@ -8,9 +10,6 @@
  * @property email the user's email address
  * @property uid the user's id
  */
-
-package com.example.quartzevents
-
 class Admin(
     email: String = "",
     name: String = "",
