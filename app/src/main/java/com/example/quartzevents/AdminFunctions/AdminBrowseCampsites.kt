@@ -45,10 +45,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.style.TextDecoration
-import com.example.quartzevents.Campsite
 import com.example.quartzevents.Classes.Owner
-import com.example.quartzevents.Repositories.CampsiteRepository
-import com.example.quartzevents.Repositories.UserRepository
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.UserRepoMain
 
 @Composable
 fun AdminBrowseCampsitesScreen(back: () -> Unit){
@@ -57,26 +56,11 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
      it responded with a block of code in this format (it is repeated throughout multiple files with different variables
      such)
      */
-    val campsiteRepository = remember{ CampsiteRepository() }
-    var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        campsiteRepository.getAllCampsites() { result, error ->
-            if (result != null) {
-                campsites = result
-            }
-        }
-    }
+    val campsiteRepository = remember{ CampsiteRepoMain() }
+    val campsites = campsiteRepository.getAllCamsites()
 
-
-    val userRepository = remember{ UserRepository() }
-    var owners by remember { mutableStateOf<List<Owner>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        userRepository.getAllOwners() { result, error ->
-            if (result != null) {
-                owners = result
-            }
-        }
-    }
+    val userRepository = remember{ UserRepoMain() }
+    val owners = userRepository.getAllOwners()
 
     Column(
         modifier = Modifier
