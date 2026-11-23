@@ -1,4 +1,9 @@
 package com.example.quartzevents.Classes
 
-class Notification(sender: User, receiver: User, message: String): Message(sender, receiver, message) {
+abstract class Notification(
+    senderId: String = "",
+    receiverId: String = "",
+    message: String = ""
+): Message(type = "notification", senderId, receiverId, message){
+
 }
