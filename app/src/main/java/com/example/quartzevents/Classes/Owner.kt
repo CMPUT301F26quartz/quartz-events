@@ -11,8 +11,6 @@
 
 package com.example.quartzevents.Classes
 
-import com.example.quartzevents.Campsite
-
 class Owner(
     email: String = "",
     name: String = "",

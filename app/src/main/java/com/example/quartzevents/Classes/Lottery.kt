@@ -1,7 +1,5 @@
 package com.example.quartzevents.Classes
 
-import com.example.quartzevents.Campsite
-
 class Lottery(
     val campsites: MutableList<Campsite> = mutableListOf(),
     val name: String ="",

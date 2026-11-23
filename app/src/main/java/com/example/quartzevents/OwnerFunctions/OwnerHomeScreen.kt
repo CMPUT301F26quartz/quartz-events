@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.example.quartzevents.model.UserProfile
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.LotteryFunctions.LotteryListCampsiteSelectScreen
 import com.example.quartzevents.Repositories.LotteryRepository
