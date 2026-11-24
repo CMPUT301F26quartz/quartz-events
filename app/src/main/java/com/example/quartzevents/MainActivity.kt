@@ -28,6 +28,7 @@ import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.OwnerFunctions.CampsiteDetails
+import com.example.quartzevents.EntrantFunctions.MyReservationsScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -63,6 +64,9 @@ fun QuartzEventsApp() {
         mutableStateOf(true)
     }
     var isSearchScreenVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isReservationsScreenVisible by rememberSaveable {
         mutableStateOf(false)
     }
     var isCreatingCampsite by rememberSaveable {
@@ -107,6 +111,12 @@ fun QuartzEventsApp() {
                 repository.logout()
                 currentProfile = null
             })
+        }
+
+        currentProfile?.role == "entrant" && isReservationsScreenVisible -> {
+            MyReservationsScreen(
+                onBack = { isReservationsScreenVisible = false}
+            )
         }
 
         currentProfile?.role == "entrant" && isSearchScreenVisible -> {
@@ -154,6 +164,9 @@ fun QuartzEventsApp() {
                     onSearch = {
                         isSearchScreenVisible = true
                     },
+                    onReservations = {
+                        isReservationsScreenVisible = true
+                    },
                     onLogout = {
                         repository.logout()
                         isSearchScreenVisible = false
@@ -172,6 +185,7 @@ fun QuartzEventsApp() {
 fun RoleHomeScreen(
     profile: UserProfile,
     onSearch: () -> Unit,
+    onReservations: () -> Unit,
     onLogout: () -> Unit
 ) {
     val roleName = when (profile.role) {
@@ -196,6 +210,14 @@ fun RoleHomeScreen(
 
         if (profile.role == "entrant") {
             SearchCampsitesButton(onClick = onSearch)
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onReservations,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("My Reservations")
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
         }
