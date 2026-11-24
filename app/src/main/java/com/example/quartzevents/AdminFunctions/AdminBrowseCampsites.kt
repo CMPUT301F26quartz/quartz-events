@@ -38,24 +38,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.style.TextDecoration
-import com.example.quartzevents.Classes.Owner
 import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.UserRepoMain
 
 @Composable
 fun AdminBrowseCampsitesScreen(back: () -> Unit){
-    /*
-    asked ChatGPT (GPT-6 Luna) how to create an updatable list from a collection of firestore documents in kotlin
-     it responded with a block of code in this format (it is repeated throughout multiple files with different variables
-     such)
-     */
     val campsiteRepository = remember{ CampsiteRepoMain() }
     val campsites = campsiteRepository.getAllCamsites()
 

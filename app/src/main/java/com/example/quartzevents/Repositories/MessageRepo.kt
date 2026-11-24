@@ -30,7 +30,7 @@ class MessageRepo {
         }
 
         errorMessage = null
-        _messages.clear()
+//        _messages.clear()
         snapshot?.documents?.forEach { document ->
             val message: Message? = when (document.getString("type")) {
                 "notification"   -> document.toObject(Notification::class.java)

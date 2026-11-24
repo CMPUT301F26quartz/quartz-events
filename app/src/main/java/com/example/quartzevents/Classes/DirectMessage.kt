@@ -1,6 +1,6 @@
 package com.example.quartzevents.Classes
 
-abstract class DirectMessage(
+class DirectMessage(
     senderId: String = "",
     receiverId: String = "",
     message: String = ""

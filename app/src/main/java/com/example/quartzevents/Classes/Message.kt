@@ -1,6 +1,6 @@
 package com.example.quartzevents.Classes
 
-abstract class Message(
+open class Message(
     var type: String = "",
     var senderId: String = "",
     var receiverId: String = "",
