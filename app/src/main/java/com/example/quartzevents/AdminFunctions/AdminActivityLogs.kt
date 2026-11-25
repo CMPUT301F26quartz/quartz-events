@@ -49,11 +49,12 @@ fun AdminActivityLogsScreen(back: () -> Unit){
     val users = usersRepository.getAllUsers()
 
     var messages by remember { mutableStateOf(listOf<Message>()) }
-//    if(viewNotifications){
+    if(viewNotifications){
+        viewNotifications(messagesRepository, usersRepository)
 //        messages = messagesRepository.getAllNotifications()
 //        if(messages.isEmpty()) println("message notifications are empty")
-//    }
-//    else if(viewDirectMessages){
+    }
+    else if(viewDirectMessages){
 //        messages = messagesRepository.getAllDirectMessages()
 //        if(messages.isEmpty()) println("message directs are empty")
     }
@@ -200,8 +201,9 @@ fun AdminActivityLogsScreen(back: () -> Unit){
 }
 
 @Composable
-fun viewNotifications(repo: MessageRepo){
-    val messages = repo.getAllNotifications()
+fun viewNotifications(mRepo: MessageRepo, uRepo: UserRepoMain){
+    val messages = mRepo.getAllNotifications()
+    val users = uRepo.getAllUsers()
     Column(
         modifier = Modifier.fillMaxWidth()
             .verticalScroll(rememberScrollState()),
