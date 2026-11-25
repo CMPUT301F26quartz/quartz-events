@@ -36,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.HouseSiding
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.List
@@ -61,10 +62,12 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
     var openProfiles by remember { mutableStateOf(false) }
     var openImages by remember { mutableStateOf(false) }
     var openActivityLog by remember { mutableStateOf(false) }
+    var openRatingsAndReviews by remember { mutableStateOf(false) }
 
     //TODO: add redirections to other screens
     if(openCampsites){AdminBrowseCampsitesScreen({openCampsites=false})}
     else if(openProfiles){AdminBrowseProfilesScreen({openProfiles=false})}
+    else if(openActivityLog){AdminActivityLogsScreen({openActivityLog=false})}
 
     else {
         Column(
@@ -225,8 +228,7 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
                     modifier = Modifier
                         .size(350.dp, 80.dp)
                         .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
-                        //TODO: make cickable lead to activity log
-                        .clickable { println("Activity Logs Box Clicked") }
+                        .clickable { openActivityLog = true }
                 ) {
                     //List Icon
                     Image(
@@ -252,6 +254,40 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
                         )
                     }
                 }//End Activity Logs
+
+                //***** Flagged Ratings and Reviews Box *****
+                Spacer(modifier = Modifier.height(15.dp))
+                Box(
+                    modifier = Modifier
+                        .size(350.dp, 80.dp)
+                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
+                        //TODO: make cickable lead to ratings and reviews
+                        .clickable { println("Ratings and Reviews Box Clicked") }
+                ) {
+                    //List Icon
+                    Image(
+                        Icons.Default.Flag,
+                        "Flag Icon",
+                        modifier = Modifier
+                            .padding(horizontal = 5.dp, vertical = 20.dp)
+                            .size(50.dp)
+                    )
+                    //Texts
+                    Column {
+                        Text(
+                            text = "Flagged Ratings and Reviews",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            modifier = Modifier
+                                .padding(start = 60.dp, top = 17.dp)
+                        )
+                        Text(
+                            text = "Review Flagged Ratings and Reviews",
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(start = 60.dp, top = 5.dp)
+                        )
+                    }
+                }//End Ratings and Reviews
 
             }//End Boxes
 

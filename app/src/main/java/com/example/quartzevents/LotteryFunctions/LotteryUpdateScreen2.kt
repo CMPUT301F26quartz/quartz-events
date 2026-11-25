@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery

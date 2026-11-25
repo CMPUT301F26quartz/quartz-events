@@ -1,6 +1,6 @@
 package com.example.quartzevents.Classes
 
-abstract class Notification(
+class Notification(
     senderId: String = "",
     receiverId: String = "",
     message: String = ""
