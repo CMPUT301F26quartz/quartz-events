@@ -17,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.quartzevents.Repositories.AuthRepository
 import com.example.quartzevents.auth.AuthScreen
+import com.example.quartzevents.Messaging.MessageCenter
 import com.example.quartzevents.model.UserProfile
 import com.example.quartzevents.ui.theme.QuartzEventsTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
+import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
@@ -68,6 +70,7 @@ fun QuartzEventsApp() {
     var isCreatingCampsite by rememberSaveable {
         mutableStateOf(false)
     }
+    var showMessages by rememberSaveable { mutableStateOf(false) }
     var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
 
     //Check if a user is already signed in
@@ -102,6 +105,10 @@ fun QuartzEventsApp() {
                 }
             )
         }
+        showMessages -> MessageCenter(currentProfile!!, onBack = { showMessages = false }, onAddCampsite = {
+            showMessages = false
+            isCreatingCampsite = true
+        })
         currentProfile?.role == "admin" -> {
             AdminDashboardScreen(onLogout = {
                 repository.logout()
@@ -138,6 +145,7 @@ fun QuartzEventsApp() {
                 } else {
                     OwnerHomeScreen(
                         profile = currentProfile!!,
+                        onMessages = { showMessages = true },
                         onAddCampsiteClick = { isCreatingCampsite = true },
                         onViewDetailsClick = { id -> selectedCampsiteId = id },
                         onLogout = {
@@ -151,6 +159,7 @@ fun QuartzEventsApp() {
 
                 RoleHomeScreen(
                     profile = currentProfile!!,
+                    onMessages = { showMessages = true },
                     onSearch = {
                         isSearchScreenVisible = true
                     },
@@ -172,10 +181,15 @@ fun QuartzEventsApp() {
 fun RoleHomeScreen(
     profile: UserProfile,
     onSearch: () -> Unit,
+    onMessages: () -> Unit,
     onLogout: () -> Unit
 ) {
+    if (profile.role == "entrant") {
+        EntrantHomeScreen(profile, onSearch, onLogout, onMessages)
+        return
+    }
+
     val roleName = when (profile.role) {
-        "entrant" -> "Entrant"
         "owner" -> "Campsite Owner"
         "admin" -> "Admin"
         else -> "Unknown"
@@ -193,12 +207,6 @@ fun RoleHomeScreen(
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.height(16.dp))
-
-        if (profile.role == "entrant") {
-            SearchCampsitesButton(onClick = onSearch)
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
 
         if (profile.role == "owner") {
             SearchCampsitesButton(onClick = onSearch)
