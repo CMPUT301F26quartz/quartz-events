@@ -51,6 +51,9 @@ import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.model.UserProfile
 
 /**
  * Collects remaining lottery info necessary for creation of lottery via a series of text fields
@@ -58,19 +61,17 @@ import com.example.quartzevents.R
  * collects name, registrationStart, registrationEnd, bookingStart, bookingEnd, capacity, entrants, and winNum
  * from text fields, and the "create new lottery" button calls a lambda function that creates the new lottery
  *
- * @property lotteries a list of Lottery objects to be passed to other functions
- * @property campsites  a list of Campsite objects to be passed to other functions
  * @property selectedSites a mutable list of Campsite objects for the new Lottery object
- * @property onAddLottery a lambda function to be used in creation of the new Lottery object
  */
 @Composable
 fun LotteryCreationScreen2(
-    lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: List<Campsite>, // Sites explicitly owned by the Owner
-    selectedSites: MutableList<Campsite>,
-    onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit,
+    profile: UserProfile,
+    selectedSites: MutableList<String?>,
     onBack: () -> Unit
 ) {
+    val lotRepo = LotteryRepository()
+    val campRepo = CampsiteRepoMain()
+    val campsites = campRepo.getAllCamsites()
     var backB by remember { mutableStateOf(false) } // used in button presses for changing screens
     var regStartInput by remember { mutableStateOf("") }
     var regEndInput by remember { mutableStateOf("") }
@@ -171,7 +172,7 @@ fun LotteryCreationScreen2(
                     value = nameInput,
                     onValueChange = { nameInput = it },
                     singleLine = true,
-                    modifier = Modifier.size(320.dp, 40.dp)
+                    modifier = Modifier.size(320.dp, 70.dp)
                         .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
                     label = { Text("Please Enter the Name of the Lottery", color = Color.Gray) }
                 )
@@ -227,16 +228,16 @@ fun LotteryCreationScreen2(
                         value = regStartInput,
                         onValueChange = { regStartInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 40.dp)
-                            .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
+                        modifier = Modifier.size(100.dp, 70.dp)
+                            .background(color = Color.LightGray),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
                     OutlinedTextField(
                         value = regEndInput,
                         onValueChange = { regEndInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 40.dp)
-                            .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
+                        modifier = Modifier.size(100.dp, 70.dp)
+                            .background(color = Color.LightGray),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
                 }
@@ -253,7 +254,8 @@ fun LotteryCreationScreen2(
                     fontSize = 20.sp,
                     color = Color.Black,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 20.dp,10.dp)
+                    modifier = Modifier.padding(start = 20.dp,
+                        0.dp)
                 )
 
                 Text(
@@ -291,16 +293,16 @@ fun LotteryCreationScreen2(
                         value = bookStartInput,
                         onValueChange = { bookStartInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 40.dp)
-                            .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
+                        modifier = Modifier.size(100.dp, 70.dp)
+                            .background(color = Color.LightGray),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
                     OutlinedTextField(
                         value = bookEndInput,
                         onValueChange = { bookEndInput = it },
                         singleLine = true,
-                        modifier = Modifier.size(100.dp, 40.dp)
-                            .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
+                        modifier = Modifier.size(100.dp, 70.dp)
+                            .background(color = Color.LightGray),
                         label = { Text("YYYY-MM-DD", color = Color.Gray) }
                     )
                 }
@@ -324,8 +326,8 @@ fun LotteryCreationScreen2(
                     value = winNumInput.toString(),
                     onValueChange = { winNumInput = it.toInt() },
                     singleLine = true,
-                    modifier = Modifier.size(320.dp, 40.dp)
-                        .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
+                    modifier = Modifier.size(320.dp, 70.dp)
+                        .background(color = Color.LightGray),
                     label = { Text("Please Enter the Number of Winners of the Lottery", color = Color.Gray) }
                 )
 
@@ -343,10 +345,19 @@ fun LotteryCreationScreen2(
                     value = capacityInput.toString(),
                     onValueChange = { capacityInput = it.toInt() },
                     singleLine = true,
-                    modifier = Modifier.size(320.dp, 40.dp)
-                        .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp)),
+                    modifier = Modifier.size(320.dp, 70.dp)
+                        .background(color = Color.LightGray),
                     label = { Text("Please Enter the Maximum Entrants into the Lottery, (or zero for unlimited)", color = Color.Gray) }
                 )
+
+                val finalSites = mutableListOf<Campsite>()
+                for (id in selectedSites) {
+                    for (site in campsites) {
+                        if (id == site.id) {
+                            finalSites.add(site)
+                        }
+                    }
+                }
 
                 Button(
                     onClick = {
@@ -355,7 +366,7 @@ fun LotteryCreationScreen2(
                             bookStartInput != "" &&
                             bookEndInput != "" &&
                             nameInput != "" &&
-                            selectedSites.isNotEmpty() &&
+                            finalSites.isNotEmpty() &&
                             entrantsInput.isNotEmpty() &&
                             winNumInput != 0 &&
                             dateFormat.matches(regStartInput) &&
@@ -363,16 +374,18 @@ fun LotteryCreationScreen2(
                             dateFormat.matches(bookStartInput) &&
                             dateFormat.matches(bookEndInput)
                         ) {
-                            onAddLottery(selectedSites,
+                            lotRepo.addLottery(Lottery(finalSites,
                                 nameInput,
                                 Date(regStartInput),
                                 Date(regEndInput),
                                 Date(bookStartInput),
                                 Date(bookStartInput),
                                 capacityInput,
+                                "",
+                                profile.uid,
                                 entrantsInput,
                                 winNumInput,
-                                winnersInput)
+                                winnersInput))
 
 
                         }

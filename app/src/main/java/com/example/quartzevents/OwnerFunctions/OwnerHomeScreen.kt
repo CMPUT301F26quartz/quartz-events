@@ -22,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.quartzevents.Campsite
 import com.example.quartzevents.Classes.Lottery
-import com.example.quartzevents.LotteryFunctions.LotteryListCampsiteSelectScreen
 import com.example.quartzevents.Repositories.LotteryRepository
 
 
@@ -36,15 +35,12 @@ fun OwnerHomeScreen (
     profile: UserProfile,
     onAddCampsiteClick: () -> Unit,
     onViewDetailsClick: (String) -> Unit,
+    onViewLotteriesClick: () -> Unit,
     onLogout: () -> Unit) {
 
 
     val campRepository = remember { CampsiteRepository() }
-    val lotRepository = remember { LotteryRepository() }
     var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
-    var lotteries by remember { mutableStateOf<List<Lottery>>(emptyList()) }
-
-    var lotScreen by remember { mutableStateOf(false) }
 
 
 
@@ -52,14 +48,6 @@ fun OwnerHomeScreen (
         campRepository.getOwnerCampsites(profile.uid) { result, _ ->
             if (result != null) {
                 campsites = result
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        lotRepository.getAllLotteries { result, _ ->
-            if (result != null) {
-                lotteries = result
             }
         }
     }
@@ -192,7 +180,7 @@ fun OwnerHomeScreen (
                 { Text("add campsite") }
 
                 Button(
-                    onClick = { lotScreen = true },
+                    onClick = { onViewLotteriesClick() },
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .padding(top = 30.dp, end = 10.dp)
@@ -202,13 +190,5 @@ fun OwnerHomeScreen (
 
             }
         }
-    }
-    if (lotScreen == true) {
-        LotteryListCampsiteSelectScreen(
-            lotteries,
-            campsites,
-            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit },
-            { lotteries -> Unit },
-            onBack = {})
     }
 }

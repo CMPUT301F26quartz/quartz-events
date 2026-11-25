@@ -52,10 +52,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Campsite
 import com.example.quartzevents.Classes.Date
-import com.example.quartzevents.Classes.Entrant
-import com.example.quartzevents.Classes.Lottery
-import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
 import com.example.quartzevents.model.UserProfile
 
 /**
@@ -77,15 +76,17 @@ import com.example.quartzevents.model.UserProfile
  *  @property onUpdateLottery a lambda function to be passed to another function
  */
 @Composable
-fun LotteryListCampsiteSelectScreen(
-    lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: List<Campsite>, // Sites explicitly owned by the Owner
-    onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit,
-    onUpdateLottery: (Lottery) -> Unit,
-    onBack: () -> Unit
+fun OwnerLotteryHomeScreen(
+    profile: UserProfile,
+    onCreateLottery: () -> Unit,
+    onBack: () -> Unit,
+    onLotterySelect: (String?) -> Unit,
+    onUpdateLottery: () -> Unit
 ){
-    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var creationScreen by remember {mutableStateOf(false)}
+    val campRepo = CampsiteRepoMain()
+    val campsites = campRepo.getAllCamsites()
+    val lotRepo = LotteryRepository()
+    val lotteries = lotRepo.getAllLotteries()
     var updateScreen by remember {mutableStateOf(false)}
     var campInfo: MutableList<MutableMap<String,MutableList<Date>>> = mutableListOf<MutableMap<String,MutableList<Date>>>()
     var selectedSite: Campsite = Campsite("", "", "", "", "", "", "", "")
@@ -103,9 +104,7 @@ fun LotteryListCampsiteSelectScreen(
         ){
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
+                onClick = onBack
             ){
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
@@ -195,14 +194,6 @@ fun LotteryListCampsiteSelectScreen(
                             )
                         }
 
-                        if (updateScreen) {
-                            for (lottery in lotteries) {
-                                if(selectedSite in lottery.campsites) {
-                                    LotteryUpdateScreen1(lotteries,campsites,lottery,{lottery: Lottery -> Unit})
-                                }
-                            }
-                        }
-
                         Button( // Remove Button
                             onClick = {
                                 // TODO: Add delete functionality (removing campsites from lotteries)
@@ -221,7 +212,7 @@ fun LotteryListCampsiteSelectScreen(
 
                     Button(
                         onClick = {
-                            creationScreen = true
+                            onCreateLottery()
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
@@ -237,17 +228,15 @@ fun LotteryListCampsiteSelectScreen(
             }
         }
     }
-    if (creationScreen){
-        LotteryCreationScreen1(
-            lotteries,
-            campsites,
-            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit },
-            onBack = {})
+    if (updateScreen) {
+        for (lottery in lotteries) {
+            if(selectedSite in lottery.campsites && profile.uid == lottery.creatorId) {
+                onLotterySelect (lottery.id)
+                onUpdateLottery()
+            }
+        }
     }
     BackHandler (onBack = onBack)
-//    if (backB) {
-//        OwnerHomeScreen(profile,{() -> Unit})
-//    }
 }
 
 

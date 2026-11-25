@@ -47,6 +47,9 @@ import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.model.UserProfile
 import com.google.firebase.firestore.FirebaseFirestore
 
 /**
@@ -64,14 +67,14 @@ import com.google.firebase.firestore.FirebaseFirestore
  */
 @Composable
 fun LotteryCreationScreen1(
-    lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: List<Campsite>, // Sites explicitly owned by the Owner
-    onAddLottery: (List<Campsite>, String, Date, Date, Date, Date, Int, MutableList<Entrant>, Int, MutableList<Entrant>) -> Unit,
+    profile: UserProfile,
+    onSelectSites: (String) -> Unit,
     onBack: () -> Unit
 ){
-    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var nextScreen by remember {mutableStateOf(false)}
-    var selectedSites = remember {mutableStateListOf<Campsite>()}
+    val campRepo = CampsiteRepoMain()
+    val campsites = campRepo.getAllCamsites()
+    val ownerSites = campRepo.getOwnerCampsites(profile.uid)
+    var selectedSites by remember {mutableStateOf("")}
 
     Column(
         modifier = Modifier
@@ -130,19 +133,26 @@ fun LotteryCreationScreen1(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
+                var csites = ""
+                campsites.forEach { site ->
+                    csites += "(${site.name})"
+                }
 
+                Text("All: $csites")
+                Text("Owner: $ownerSites")
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
-                    itemsIndexed(campsites) { index, site ->
+                    itemsIndexed(ownerSites) { index, site ->
                         SiteNameListing( // call composable function that builds each lottery display
+                            selectedSites,
                             site = site,
-                            onAddSite = { selectedSites.add(it) },
-                            onRemoveSite = { selectedSites.remove(it) }
+                            onAddSite = { it },
+                            onRemoveSite = { it }
                         )
-                        if (index < campsites.lastIndex) {
+                        if (index < ownerSites.lastIndex) {
                             HorizontalDivider()
                         }
                     }
@@ -157,16 +167,25 @@ fun LotteryCreationScreen1(
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
+                var nonOwnerSites = mutableListOf<Campsite>()
+                for (site in campsites) {
+                    if (site  !in ownerSites) {
+                        nonOwnerSites.add(site)
+                    }
+                }
+                Text("Other: $nonOwnerSites")
+
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
-                    itemsIndexed(campsites) { index, site ->
+                    itemsIndexed(nonOwnerSites) { index, site ->
                         SiteNameListing( // call composable function that builds each lottery display
+                            selectedSites,
                             site = site,
-                            onAddSite = { selectedSites.add(it) },
-                            onRemoveSite = { selectedSites.remove(it) }
+                            onAddSite = { selectedSites = it },
+                            onRemoveSite = { selectedSites = it }
                         )
-                        if (index < campsites.lastIndex) {
+                        if (index < nonOwnerSites.lastIndex) {
                             HorizontalDivider()
                         }
                     }
@@ -180,8 +199,8 @@ fun LotteryCreationScreen1(
                 ) {
                     Button(
                         onClick = {
-                            if (selectedSites.isNotEmpty()) {
-                                nextScreen = true
+                            if (selectedSites != "") {
+                                onSelectSites(selectedSites)
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -198,20 +217,7 @@ fun LotteryCreationScreen1(
             }
         }
     }
-    if (nextScreen){
-        LotteryCreationScreen2(
-            lotteries, campsites, selectedSites,
-            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit },
-            onBack = {})
-    }
     BackHandler(onBack = onBack)
-//    if (backB) {
-//        LotteryListCampsiteSelectScreen(
-//            lotteries,
-//            campsites,
-//            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit },
-//            { lottery -> Unit })
-//    }
 }
 
 /**
@@ -226,10 +232,12 @@ fun LotteryCreationScreen1(
  */
 @Composable
 fun SiteNameListing (
+    siteIds: String,
     site: Campsite,
-    onAddSite: (Campsite) -> Unit,
-    onRemoveSite: (Campsite) -> Unit
+    onAddSite: (String) -> Unit,
+    onRemoveSite: (String) -> Unit
 ) {
+    val siteId = site.id
     var isChecked by remember {mutableStateOf(false)}
     Row (
         modifier = Modifier
@@ -243,9 +251,18 @@ fun SiteNameListing (
             onCheckedChange = {
                 isChecked = it
                 if(isChecked) {
-                    onAddSite(site)
+                    val sites = siteIds + " " + siteId
+                    onAddSite(sites)
                 } else if(!isChecked){
-                    onRemoveSite(site)
+                    var sites = ""
+                    val ids = siteIds.split(" ")
+                    sites += ids[0]
+                    for (id in (1..ids.size)) {
+                        if (ids[id] != siteId) {
+                           sites += " " + ids[id]
+                        }
+                    }
+                    onRemoveSite(siteId)
                 }
                               },
         )
@@ -264,21 +281,4 @@ fun SiteNameListing (
             )
         }
     }
-}
-
-private fun getNonOwnerCampsites(
-    ownerId: String,
-    onResult: (List<Campsite>?, String?) -> Unit
-) {
-    val db = FirebaseFirestore.getInstance()
-    db.collection("campsites")
-        .whereNotEqualTo("ownerId", ownerId)
-        .get()
-        .addOnSuccessListener { result ->
-            val campsites = result.toObjects(Campsite::class.java)
-            onResult(campsites, null)
-        }
-        .addOnFailureListener { exception ->
-            onResult(null, exception.message)
-        }
 }

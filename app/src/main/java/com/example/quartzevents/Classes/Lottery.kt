@@ -1,6 +1,7 @@
 package com.example.quartzevents.Classes
 
 import com.example.quartzevents.Campsite
+import kotlin.random.Random
 
 class Lottery(
     val campsites: MutableList<Campsite> = mutableListOf(),
@@ -11,6 +12,7 @@ class Lottery(
     var bookingEnd: Date = Date(""),
     var capacity:Int?=null,
     val id: String?=null,
+    val creatorId: String?=null,
     val entrants: MutableList<Entrant> = mutableListOf(),
     var winNum: Int?=null,
     val winners: MutableList<Entrant> = mutableListOf()
@@ -27,5 +29,19 @@ class Lottery(
 
     fun clear_contestant_list() {
         entrants.clear()
+    }
+
+    fun selectWinner(owner: Owner) {
+        for (i in 1..winNum!!) {
+            val num = Random.nextInt(0, entrants.size)
+            winners.add(entrants[num])
+        }
+        winners.forEach{ item ->
+            sendWinNotif(item,owner)
+        }
+    }
+
+    private fun sendWinNotif(winner: Entrant, owner: Owner) {
+        val notif = Notification(owner,winner,"")
     }
 }

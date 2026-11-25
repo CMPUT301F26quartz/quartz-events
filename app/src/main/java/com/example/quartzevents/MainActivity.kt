@@ -23,11 +23,22 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
+import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.Classes.Owner
 import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
+import com.example.quartzevents.LotteryFunctions.LotteryCreationScreen1
+import com.example.quartzevents.LotteryFunctions.LotteryCreationScreen2
+import com.example.quartzevents.LotteryFunctions.LotteryUpdateScreen1
+import com.example.quartzevents.LotteryFunctions.LotteryUpdateScreen2
+import com.example.quartzevents.LotteryFunctions.OwnerLotteryHomeScreen
 
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.OwnerFunctions.CampsiteDetails
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.Repositories.UserRepository
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 
 class MainActivity : ComponentActivity() {
@@ -44,7 +55,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             QuartzEventsTheme {
                 QuartzEventsApp()
-//                AdminDashboardScreen()
             }
         }
     }
@@ -68,7 +78,28 @@ fun QuartzEventsApp() {
     var isCreatingCampsite by rememberSaveable {
         mutableStateOf(false)
     }
+    var isViewingLottery by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isCreatingLottery1 by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isCreatingLottery2 by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isUpdatingLottery1 by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isUpdatingLottery2 by rememberSaveable {
+        mutableStateOf(false)
+    }
     var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var selectedLotteryId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var selectedSitesForLottery by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var selectedSitesForUpdatingLottery by rememberSaveable { mutableStateOf<String?>(null) }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -82,6 +113,7 @@ fun QuartzEventsApp() {
             isLoading = false
         }
     }
+    checkLotteries(currentProfile)
     when {
         // Show loading indicator
         isLoading -> {
@@ -135,11 +167,51 @@ fun QuartzEventsApp() {
                         onBack = { isCreatingCampsite = false },
                         onSaveSuccess = { isCreatingCampsite = false }
                     )
+
+                }else if (isViewingLottery) {
+                    OwnerLotteryHomeScreen(
+                        currentProfile!!,
+                        onCreateLottery = { isCreatingLottery1 = true; isViewingLottery = false },
+                        onLotterySelect = { id -> selectedLotteryId = id },
+                        onUpdateLottery = { isUpdatingLottery1 = true },
+                        onBack = { isViewingLottery = false }
+                    )
+
+                } else if (isCreatingLottery1) {
+                    LotteryCreationScreen1(
+                        profile = currentProfile!!,
+                        onSelectSites = {sites -> selectedSitesForLottery = sites; isCreatingLottery2 = true; isCreatingLottery1 = false},
+                        onBack = { isCreatingLottery1 = false; isViewingLottery = true }
+                    )
+                }else if (selectedSitesForLottery != null && isCreatingLottery2) {
+                    val sites = selectedSitesForLottery!!.split(" ")
+                    LotteryCreationScreen2(
+                        currentProfile!!,
+                        selectedSites = sites as MutableList<String?>,
+                        onBack = { selectedSitesForLottery = null; isCreatingLottery2 = false; isCreatingLottery1 = true }
+                    )
+
+                }else if (selectedLotteryId != null && isUpdatingLottery1) {
+                    LotteryUpdateScreen1(
+                        profile = currentProfile!!,
+                        selectedLotteryId,
+                        onSelectSites = {sites -> selectedSitesForUpdatingLottery = sites; isUpdatingLottery2 = true; isUpdatingLottery1 = false},
+                        onBack = { selectedLotteryId = null; isUpdatingLottery1 = false; isViewingLottery = true }
+                    )
+                }else if (selectedLotteryId != null && isUpdatingLottery2) {
+                    val sites = selectedSitesForUpdatingLottery!!.split(" ")
+                    LotteryUpdateScreen2(
+                        currentProfile!!,
+                        selectedSites = sites as MutableList<String?>,
+                        selectedLotteryId,
+                        onBack = { isUpdatingLottery2 = false; isUpdatingLottery1 = true }
+                    )
                 } else {
                     OwnerHomeScreen(
                         profile = currentProfile!!,
                         onAddCampsiteClick = { isCreatingCampsite = true },
                         onViewDetailsClick = { id -> selectedCampsiteId = id },
+                        onViewLotteriesClick = { isViewingLottery = true },
                         onLogout = {
                             repository.logout()
                             currentProfile = null
@@ -235,4 +307,44 @@ private fun SearchCampsitesButton(
     ) {
         Text(text = "Search Campsites")
     }
+}
+
+/**
+ * Checks the database to see if any of the lotteries have reached draw date,
+ * then calls the selectWinner function from the lottery class to
+ * start the lottery winner process if today is equal to or after the end of
+ * registration.
+ */
+private fun checkLotteries(profile: UserProfile?){
+    val lotRepo = LotteryRepository()
+    val lotteries = lotRepo.getAllLotteries()
+    val userRepo = UserRepository()
+    var owner: Owner
+    val today = Date(LocalDate.now(ZoneOffset.UTC).toString()) // get current date in UTC
+    var errorMessage by mutableStateOf<String?>(null)
+    userRepo.getAllOwners(
+        onResult = {owners, error ->
+            if(owners != null){ // continue if the owners list is not null
+                owners.forEach{ item ->
+                    if (item.uid == profile?.uid){ // get the matching Owner object based on profile uid
+                        owner = item
+                        if (lotteries.isNotEmpty()){
+                            lotteries.forEach { item -> // check each lottery in the collection
+                                if (item.registrationEnd.isEqual(today) || item.registrationEnd.isAfter(
+                                        today
+                                    )
+                                ) {
+                                    item.selectWinner(owner)
+                                }
+                            }
+                        } else {
+                            throw Error("No Lotteries Found.")
+                        }
+                    }
+                }
+            } else {
+                errorMessage = error // throw error if no Owner Users were found
+            }
+        }
+    )
 }

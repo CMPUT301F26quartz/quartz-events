@@ -1,5 +1,6 @@
 package com.example.quartzevents.LotteryFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,38 +38,45 @@ import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Campsite
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.model.UserProfile
 
 
 @Composable
 fun LotteryUpdateScreen1(
-    lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: List<Campsite>, // Sites explicitly owned by the Owner
-    lottery: Lottery,
-    onUpdateLottery: (Lottery) -> Unit
-){
-    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var nextScreen by remember {mutableStateOf(false)}
-    var selectedSites = remember {mutableStateListOf<Campsite>()}
+    profile: UserProfile,
+    lotteryId: String?,
+    onSelectSites: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val campRepo = CampsiteRepoMain()
+    var campsites = campRepo.getAllCamsites()
+    val ownerSites = campRepo.getOwnerCampsites(profile.uid)
+    val lotRepo = LotteryRepository()
+    val lottery = lotRepo.getLottery(lotteryId!!)
+    var nextScreen by remember { mutableStateOf(false) }
+    var selectedSites by remember { mutableStateOf("") }
+
+
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.secondary)
-    ){
-        Row (
+    ) {
+        Row(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Bottom,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.primary)
                 .padding(vertical = 45.dp)
-        ){
+        ) {
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
-            ){
+                onClick = onBack
+            ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
@@ -104,26 +111,74 @@ fun LotteryUpdateScreen1(
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
+                Text(
+                    "Your Campsites:",
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    itemsIndexed(campsites) { index, site ->
+                    itemsIndexed(ownerSites) { index, site ->
                         SiteUpdateNameListing( // call composable function that builds each lottery display
+                            selectedSites,
                             lottery = lottery,
                             site = site,
-                            onAddSite = {selectedSites.add(it)},
-                            onRemoveSite = {selectedSites.remove(it)}
+                            onAddSite = { selectedSites = it },
+                            onRemoveSite = { selectedSites = it }
                         )
-                        if (index < campsites.lastIndex) {
+                        if (index < ownerSites.lastIndex) {
                             HorizontalDivider()
                         }
                     }
                 }
 
+                var nonOwnerSites = mutableListOf<Campsite>()
+                for (site in campsites) {
+                    if (site !in ownerSites) {
+                        nonOwnerSites.add(site)
+                    }
+                }
+
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
+                Text(
+                    "Other Campsites:",
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
+                LazyColumn( // List of available Lottery displays
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    itemsIndexed(nonOwnerSites) { index, site ->
+                        SiteUpdateNameListing( // call composable function that builds each lottery display
+                            selectedSites,
+                            lottery = lottery,
+                            site = site,
+                            onAddSite = { selectedSites = it },
+                            onRemoveSite = { selectedSites = it }
+                        )
+                        if (index < nonOwnerSites.lastIndex) {
+                            HorizontalDivider()
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
                 Button(
                     onClick = {
-                        if (selectedSites.isNotEmpty()) {
-                            nextScreen = true
+                        if (selectedSites != "") {
+                            onSelectSites(selectedSites)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -136,28 +191,24 @@ fun LotteryUpdateScreen1(
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
-                if (nextScreen){
-                    LotteryUpdateScreen2(lotteries,campsites,selectedSites,
-                        lottery,{lottery -> Unit})
-                }
+                BackHandler(onBack = onBack)
             }
         }
-    }
-    if (backB) {
-        LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners-> Unit}, {lottery -> Unit},onBack = {})
     }
 }
 
 
 @Composable
-fun SiteUpdateNameListing (
-    lottery: Lottery,
+fun SiteUpdateNameListing(
+    siteIds: String,
+    lottery: Lottery?,
     site: Campsite,
-    onAddSite: (Campsite) -> Unit,
-    onRemoveSite: (Campsite) -> Unit
+    onAddSite: (String) -> Unit,
+    onRemoveSite: (String) -> Unit
 ) {
+    val siteId = site.id
     var isChecked by remember { mutableStateOf(false) }
-    if (site in lottery.campsites) {
+    if (site in lottery!!.campsites) {
         isChecked = true
     }
     Row(
@@ -172,9 +223,18 @@ fun SiteUpdateNameListing (
             onCheckedChange = {
                 isChecked = it
                 if (isChecked) {
-                    onAddSite(site)
+                    val sites = siteIds + " " + siteId
+                    onAddSite(sites)
                 } else if (!isChecked) {
-                    onRemoveSite(site)
+                    var sites = ""
+                    val ids = siteIds.split(" ")
+                    sites += ids[0]
+                    for (id in (1..ids.size)) {
+                        if (ids[id] != siteId) {
+                            sites += " " + ids[id]
+                        }
+                    }
+                    onRemoveSite(siteId)
                 }
             },
         )
@@ -194,3 +254,5 @@ fun SiteUpdateNameListing (
         }
     }
 }
+
+

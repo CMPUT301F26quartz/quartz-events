@@ -1,5 +1,6 @@
 package com.example.quartzevents.LotteryFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,16 +44,20 @@ import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.model.UserProfile
 
 @Composable
 fun LotteryUpdateScreen2(
-    lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: List<Campsite>, // Sites explicitly owned by the Owner
-    selectedSites: MutableList<Campsite>,
-    lottery: Lottery,
-    onUpdateLottery: (Lottery) -> Unit
+    profile: UserProfile,
+    selectedSites: MutableList<String?>,
+    lotteryId: String?,
+    onBack: () -> Unit
 ) {
-    var backB by remember { mutableStateOf(false) } // used in button presses for changing screens
+    val lotRepo = LotteryRepository()
+    val campRepo = CampsiteRepoMain()
+    val campsites = campRepo.getAllCamsites()
     var regStartInput by remember { mutableStateOf("") }
     var regEndInput by remember { mutableStateOf("") }
     var bookStartInput by remember { mutableStateOf("") }
@@ -84,9 +89,7 @@ fun LotteryUpdateScreen2(
         ) {
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
+                onClick = onBack
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
@@ -330,6 +333,15 @@ fun LotteryUpdateScreen2(
                     label = { Text("Please Enter the Maximum Entrants into the Lottery, (or zero for unlimited)", color = Color.Gray) }
                 )
 
+                val finalSites = mutableListOf<Campsite>()
+                for (id in selectedSites) {
+                    for (site in campsites) {
+                        if (id == site.id) {
+                            finalSites.add(site)
+                        }
+                    }
+                }
+
                 Button(
                     onClick = {
                         if (regStartInput != "" &&
@@ -337,7 +349,7 @@ fun LotteryUpdateScreen2(
                             bookStartInput != "" &&
                             bookEndInput != "" &&
                             nameInput != "" &&
-                            selectedSites.isNotEmpty() &&
+                            finalSites.isNotEmpty() &&
                             entrantsInput.isNotEmpty() &&
                             winnersInput != 0 &&
                             dateFormat.matches(regStartInput) &&
@@ -345,16 +357,17 @@ fun LotteryUpdateScreen2(
                             dateFormat.matches(bookStartInput) &&
                             dateFormat.matches(bookEndInput)
                         ) {
-                            onUpdateLottery(
+                            lotRepo.updateLottery(
                                 Lottery(
-                                    selectedSites,
+                                    finalSites,
                                     nameInput,
                                     Date(regStartInput),
                                     Date(regEndInput),
                                     Date(bookStartInput),
                                     Date(bookEndInput),
                                     capacityInput,
-                                    lottery.id,
+                                    lotteryId,
+                                    profile.uid,
                                     entrantsInput,
                                     winnersInput
                                 )
@@ -374,7 +387,5 @@ fun LotteryUpdateScreen2(
             }
         }
     }
-    if (backB) {
-        LotteryUpdateScreen1(lotteries,campsites,lottery, {lottery: Lottery -> Unit})
-    }
+    BackHandler(onBack = onBack)
 }
