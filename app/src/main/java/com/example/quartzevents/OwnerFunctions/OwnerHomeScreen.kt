@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Messaging.HomeMessages
 import com.example.quartzevents.model.UserProfile
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -34,13 +35,13 @@ private val QuartzCream = Color(0xFFF7F5ED)
 
 fun OwnerHomeScreen (
     profile: UserProfile,
+    onMessages: () -> Unit,
     onAddCampsiteClick: () -> Unit,
     onViewDetailsClick: (String) -> Unit,
     onLogout: () -> Unit) {
 
 
     val campRepository = remember { CampsiteRepository() }
-    val lotRepository = remember { LotteryRepository() }
     var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
     var lotteries by remember { mutableStateOf<List<Lottery>>(emptyList()) }
 
@@ -56,13 +57,7 @@ fun OwnerHomeScreen (
         }
     }
 
-    LaunchedEffect(Unit) {
-        lotRepository.getAllLotteries { result, _ ->
-            if (result != null) {
-                lotteries = result
-            }
-        }
-    }
+
 
 
     Column(
@@ -109,6 +104,7 @@ fun OwnerHomeScreen (
                 .fillMaxSize()
                 .padding(24.dp)
         ) {
+            HomeMessages(profile.uid, onMessages)
             Text(
                 fontSize = 22.sp,
                 text = "Your registered Campsites",
@@ -203,7 +199,15 @@ fun OwnerHomeScreen (
             }
         }
     }
-    if (lotScreen == true) {
+    if (lotScreen) {
+        val lotRepository = remember { LotteryRepository() }
+        LaunchedEffect(Unit) {
+            lotRepository.getAllLotteries { result, _ ->
+                if (result != null) {
+                    lotteries = result
+                }
+            }
+        }
         LotteryListCampsiteSelectScreen(
             lotteries,
             campsites,
