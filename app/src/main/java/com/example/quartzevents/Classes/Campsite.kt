@@ -1,3 +1,5 @@
+package com.example.quartzevents.Classes
+
 /**
  * Represents a single campsite in the system.
  *
@@ -14,12 +16,6 @@
  * @property tags Search keywords like Forest or Lake.
  * @property reservations A list of booked reservations.
  */
-
-package com.example.quartzevents
-
-import com.example.quartzevents.Classes.Reservation
-
-
 data class Campsite(
     val id: String = "",
     val ownerId: String = "",
@@ -36,4 +32,3 @@ data class Campsite(
         reservations.add(new)
     }
 }
-

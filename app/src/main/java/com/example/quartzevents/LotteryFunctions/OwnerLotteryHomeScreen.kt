@@ -50,8 +50,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.LotteryRepository

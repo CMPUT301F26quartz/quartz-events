@@ -2,7 +2,7 @@ package com.example.quartzevents.Repositories
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Campsite
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore

@@ -17,11 +17,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.Messaging.HomeMessages
 import com.example.quartzevents.model.UserProfile
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Lottery
+import com.example.quartzevents.LotteryFunctions.LotteryListCampsiteSelectScreen
 import com.example.quartzevents.Repositories.LotteryRepository
 
 
@@ -33,6 +35,7 @@ private val QuartzCream = Color(0xFFF7F5ED)
 
 fun OwnerHomeScreen (
     profile: UserProfile,
+    onMessages: () -> Unit,
     onAddCampsiteClick: () -> Unit,
     onViewDetailsClick: (String) -> Unit,
     onViewLotteriesClick: () -> Unit,
@@ -51,6 +54,8 @@ fun OwnerHomeScreen (
             }
         }
     }
+
+
 
 
     Column(
@@ -97,6 +102,7 @@ fun OwnerHomeScreen (
                 .fillMaxSize()
                 .padding(24.dp)
         ) {
+            HomeMessages(profile.uid, onMessages)
             Text(
                 fontSize = 22.sp,
                 text = "Your registered Campsites",
