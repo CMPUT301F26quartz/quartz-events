@@ -1,6 +1,7 @@
 package com.example.quartzevents.LotteryFunctions
 
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,15 +37,17 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
 
 @Composable
 fun ActiveLotteriesScreen(
-    lotteries: List<Lottery>, // lotteries list - connects to db
     campsite: String,
-    user: Entrant
+    onLotClick: () -> Unit,
+    onBack: () -> Unit
 ){
-    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var nextScreen by remember {mutableStateOf(false)}
+    val lotRepo = LotteryRepository()
+    val lotteries = lotRepo.getAllLotteries()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -59,19 +62,13 @@ fun ActiveLotteriesScreen(
         ){
             IconButton( // back button, referenced https://developer.android.com/develop/ui/compose/components/icon-button for implementation
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
+                onClick = onBack
             ){
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
                     tint = MaterialTheme.colorScheme.secondary
                 )
-            }
-
-            if (backB) {
-                // previous screen function goes here
             }
 
             Spacer(modifier = Modifier.padding(15.dp))
@@ -112,21 +109,17 @@ fun ActiveLotteriesScreen(
                     itemsIndexed(lotteries) { index, lottery ->
                         CampsiteLotteryDisplay( // call composable function that builds each lottery display
                             lottery = lottery,
-                            onClick = {
-                                nextScreen = true
-                            }
+                            onClick = { onLotClick() }
                         )
                         if (index < lotteries.lastIndex) {
                             HorizontalDivider()
-                        }
-                        if(nextScreen) {
-                            LotteryDetailScreen({ lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
                         }
                     }
                 }
             }
         }
     }
+    BackHandler(onBack = onBack)
 }
 
 @Composable

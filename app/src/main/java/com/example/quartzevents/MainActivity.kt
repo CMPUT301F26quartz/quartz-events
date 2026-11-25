@@ -25,19 +25,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
 import com.example.quartzevents.Classes.Date
-import com.example.quartzevents.Classes.Owner
 import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
-import com.example.quartzevents.LotteryFunctions.LotteryCreationScreen1
-import com.example.quartzevents.LotteryFunctions.LotteryCreationScreen2
-import com.example.quartzevents.LotteryFunctions.LotteryUpdateScreen1
-import com.example.quartzevents.LotteryFunctions.LotteryUpdateScreen2
-import com.example.quartzevents.LotteryFunctions.OwnerLotteryHomeScreen
-
+import com.example.quartzevents.OwnerFunctions.LotteryCreationScreen1
+import com.example.quartzevents.OwnerFunctions.LotteryCreationScreen2
+import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen1
+import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen2
+import com.example.quartzevents.OwnerFunctions.OwnerLotteryHomeScreen
+import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.OwnerFunctions.CampsiteDetails
 import com.example.quartzevents.Repositories.LotteryRepository
-import com.example.quartzevents.Repositories.UserRepository
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -94,6 +92,9 @@ fun QuartzEventsApp() {
     var isUpdatingLottery2 by rememberSaveable {
         mutableStateOf(false)
     }
+
+    var showMessages by rememberSaveable { mutableStateOf(false) }
+
     var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
 
     var selectedLotteryId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -114,7 +115,7 @@ fun QuartzEventsApp() {
             isLoading = false
         }
     }
-    checkLotteries(currentProfile)
+    checkLotteries()
     when {
         // Show loading indicator
         isLoading -> {
@@ -318,36 +319,22 @@ private fun SearchCampsitesButton(
  * start the lottery winner process if today is equal to or after the end of
  * registration.
  */
-private fun checkLotteries(profile: UserProfile?){
+private fun checkLotteries(){
     val lotRepo = LotteryRepository()
     val lotteries = lotRepo.getAllLotteries()
-    val userRepo = UserRepository()
-    var owner: Owner
     val today = Date(LocalDate.now(ZoneOffset.UTC).toString()) // get current date in UTC
-    var errorMessage by mutableStateOf<String?>(null)
-    userRepo.getAllOwners(
-        onResult = {owners, error ->
-            if(owners != null){ // continue if the owners list is not null
-                owners.forEach{ item ->
-                    if (item.uid == profile?.uid){ // get the matching Owner object based on profile uid
-                        owner = item
-                        if (lotteries.isNotEmpty()){
-                            lotteries.forEach { item -> // check each lottery in the collection
-                                if (item.registrationEnd.isEqual(today) || item.registrationEnd.isAfter(
-                                        today
-                                    )
-                                ) {
-                                    item.selectWinner(owner)
-                                }
-                            }
-                        } else {
-                            throw Error("No Lotteries Found.")
-                        }
-                    }
+    if (lotteries.isNotEmpty()) {
+        lotteries.forEach { item -> // check each lottery in the collection
+            if (item.registrationEnd.isEqual(today) || item.registrationEnd.isAfter(today)) {
+                if (item.creatorId != null) {
+                    item.selectWinner(item.creatorId)
+                } else {
+                    throw Error("Could Not Parse Owner Id")
                 }
-            } else {
-                errorMessage = error // throw error if no Owner Users were found
             }
         }
-    )
+    }
+//    } else {
+//        throw Error("No Lotteries Found.")
+//    }
 }

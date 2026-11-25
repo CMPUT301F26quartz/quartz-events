@@ -1,5 +1,6 @@
 package com.example.quartzevents.LotteryFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,17 +38,30 @@ import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.Repositories.UserRepoMain
 
 @Composable
 fun LotteryDetailScreen (
-    onAddEntrant: (Lottery, Entrant) -> Unit,
-    lotteries: List<Lottery>,
-    lottery: Lottery,
-    campsite: String,
-    user: Entrant
+    lotteryId: String,
+    userId: String,
+    onAddClick: () -> Unit,
+    onBack: () -> Unit
 ) {
-    var backB by remember { mutableStateOf(false) }
-    var nextScreen by remember { mutableStateOf(false) }
+    val lotRepo = LotteryRepository()
+    val lotteries = lotRepo.getAllLotteries()
+    var lottery = Lottery()
+    lotteries.forEach{ item ->
+        if (item.id == lotteryId)
+            lottery = item
+    }
+    val userRepo = UserRepoMain()
+    val entrants = userRepo.getAllEntrants()
+    var entrant = Entrant()
+    entrants.forEach{ item ->
+        if (item.uid == userId)
+            entrant = item
+    }
     val months: MutableMap<Int, String> = mutableMapOf(
         Pair(1, "Jan"),
         Pair(2, "Feb"),
@@ -75,9 +89,7 @@ fun LotteryDetailScreen (
         ) {
             IconButton(
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
+                onClick = onBack
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
@@ -131,7 +143,6 @@ fun LotteryDetailScreen (
                     ) {
                         itemsIndexed(lottery.campsites) { index, campsite ->
                             CampDisplay(
-                                modifier = Modifier,
                                 campsite = campsite
                             )
                             if (index < lottery.campsites.lastIndex) {
@@ -202,8 +213,8 @@ fun LotteryDetailScreen (
                     ) {
                         Button(
                             onClick = {
-                                nextScreen = true
-                                onAddEntrant(lottery, user)
+                                lottery.add_contestant(entrant)
+                                onAddClick()
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -216,27 +227,15 @@ fun LotteryDetailScreen (
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
-//                        if (nextScreen) {
-//                            LotteryStatusScreen(
-//                                { Lottery, Entrant -> Unit },
-//                                lotteries,
-//                                lottery,
-//                                campsite,
-//                                user
-//                            )
-//                        }
                     }
                 }
             }
         }
-    if (backB) {
-        ActiveLotteriesScreen(lotteries, campsite, user)
-    }
+    BackHandler(onBack = onBack)
 }
 
 @Composable
 fun CampDisplay(
-    modifier: Modifier,
     campsite: Campsite
 ) {
     Box (

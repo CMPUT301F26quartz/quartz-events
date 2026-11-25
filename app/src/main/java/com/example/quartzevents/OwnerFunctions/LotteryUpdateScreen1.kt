@@ -1,4 +1,4 @@
-package com.example.quartzevents.LotteryFunctions
+package com.example.quartzevents.OwnerFunctions
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background

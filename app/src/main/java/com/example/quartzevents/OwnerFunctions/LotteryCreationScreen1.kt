@@ -4,7 +4,7 @@
  * This File deals with the selection of which of the owner's campsites are to be included in the
  * lottery.
  */
-package com.example.quartzevents.LotteryFunctions
+package com.example.quartzevents.OwnerFunctions
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -31,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,14 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Campsite
-import com.example.quartzevents.Classes.Date
-import com.example.quartzevents.Classes.Entrant
-import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 import com.example.quartzevents.Repositories.CampsiteRepoMain
-import com.example.quartzevents.Repositories.LotteryRepository
 import com.example.quartzevents.model.UserProfile
-import com.google.firebase.firestore.FirebaseFirestore
 
 /**
  * This function is the main controlling function for this screen
@@ -72,7 +66,6 @@ fun LotteryCreationScreen1(
     onBack: () -> Unit
 ){
     val campRepo = CampsiteRepoMain()
-    val campsites = campRepo.getAllCamsites()
     val ownerSites = campRepo.getOwnerCampsites(profile.uid)
     var selectedSites by remember {mutableStateOf("")}
 
@@ -127,21 +120,6 @@ fun LotteryCreationScreen1(
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
-                Text(
-                    "Your Campsites:",
-                    fontSize = 27.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                var csites = ""
-                campsites.forEach { site ->
-                    csites += "(${site.name})"
-                }
-
-                Text("All: $csites")
-                Text("Owner: $ownerSites")
-                Spacer(modifier = Modifier.padding(top = 20.dp))
-
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
@@ -153,39 +131,6 @@ fun LotteryCreationScreen1(
                             onRemoveSite = { it }
                         )
                         if (index < ownerSites.lastIndex) {
-                            HorizontalDivider()
-                        }
-                    }
-                }
-
-                Text(
-                    "Other Campsites:",
-                    fontSize = 27.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.padding(top = 20.dp))
-
-                var nonOwnerSites = mutableListOf<Campsite>()
-                for (site in campsites) {
-                    if (site  !in ownerSites) {
-                        nonOwnerSites.add(site)
-                    }
-                }
-                Text("Other: $nonOwnerSites")
-
-                LazyColumn( // List of available Lottery displays
-                    modifier = Modifier.fillMaxSize().weight(1f)
-                ) {
-                    itemsIndexed(nonOwnerSites) { index, site ->
-                        SiteNameListing( // call composable function that builds each lottery display
-                            selectedSites,
-                            site = site,
-                            onAddSite = { selectedSites = it },
-                            onRemoveSite = { selectedSites = it }
-                        )
-                        if (index < nonOwnerSites.lastIndex) {
                             HorizontalDivider()
                         }
                     }

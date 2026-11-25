@@ -1,6 +1,6 @@
 package com.example.quartzevents.Classes
 
-import com.example.quartzevents.Campsite
+import com.example.quartzevents.Classes.Campsite
 import kotlin.random.Random
 
 class Lottery(
@@ -32,17 +32,17 @@ class Lottery(
         entrants.clear()
     }
 
-    fun selectWinner(owner: Owner) {
+    fun selectWinner(ownerId: String) {
         for (i in 1..winNum!!) {
             val num = Random.nextInt(0, entrants.size)
             winners.add(entrants[num])
         }
         winners.forEach{ item ->
-            sendWinNotif(item,owner)
+            sendWinNotif(item,ownerId)
         }
     }
 
-    private fun sendWinNotif(winner: Entrant, owner: Owner) {
-        val notif = Notification(owner,winner,"")
+    private fun sendWinNotif(winner: Entrant, ownerId: String) {
+        val notif = Notification(ownerId,winner.uid,"")
     }
 }

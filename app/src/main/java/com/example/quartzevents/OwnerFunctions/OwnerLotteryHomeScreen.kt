@@ -13,7 +13,7 @@
  * lottery associated with the campsite selected.
  */
 
-package com.example.quartzevents.LotteryFunctions
+package com.example.quartzevents.OwnerFunctions
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Date
-import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 import com.example.quartzevents.Repositories.CampsiteRepoMain
@@ -90,8 +89,8 @@ fun OwnerLotteryHomeScreen(
     val lotRepo = LotteryRepository()
     val lotteries = lotRepo.getAllLotteries()
     var updateScreen by remember {mutableStateOf(false)}
-    var campInfo: MutableList<MutableMap<String,MutableList<Date>>> = mutableListOf<MutableMap<String,MutableList<Date>>>()
-    var selectedSite: Campsite = Campsite("", "", "", "", "", "", "", "")
+    var campInfo: MutableList<MutableMap<Pair<String,String>,MutableList<Date>>> = mutableListOf<MutableMap<Pair<String,String>,MutableList<Date>>>()
+    var selectedLot = Lottery()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -144,7 +143,7 @@ fun OwnerLotteryHomeScreen(
                     for (site in lottery.campsites) { // ensures a site is only listed if the owner owns it
                         campInfo.add(
                             mutableMapOf(
-                                site.name to mutableListOf(
+                                Pair(site.name,lottery.name) to mutableListOf(
                                     lottery.registrationStart,
                                     lottery.registrationEnd
                                 )
@@ -159,12 +158,12 @@ fun OwnerLotteryHomeScreen(
                     itemsIndexed(campInfo) { index, siteInfo ->
                         CampsiteListing( // call composable function that builds each lottery display
                             siteInfo = siteInfo,
-                            onAddSite = {selectedSite = it},
-                            onRemoveSite = {selectedSite =
-                                Campsite("", "", "", "", "", "", "", "")
+                            onAddSite = {selectedLot = it},
+                            onRemoveSite = {selectedLot =
+                                Lottery()
                             },
-                            selectedSite = selectedSite,
-                            sites = campsites
+                            selectedLot = selectedLot,
+                            lotteries = lotteries
                         )
                         if (index < campInfo.lastIndex) {
                             HorizontalDivider()
@@ -231,11 +230,9 @@ fun OwnerLotteryHomeScreen(
         }
     }
     if (updateScreen) {
-        for (lottery in lotteries) {
-            if(selectedSite in lottery.campsites && profile.uid == lottery.creatorId) {
-                onLotterySelect (lottery.id)
-                onUpdateLottery()
-            }
+        if(profile.uid == selectedLot.creatorId) {
+            onLotterySelect (selectedLot.id)
+            onUpdateLottery()
         }
     }
     BackHandler (onBack = onBack)
@@ -261,11 +258,11 @@ fun OwnerLotteryHomeScreen(
  */
 @Composable
 fun CampsiteListing (
-    siteInfo: MutableMap<String,MutableList<Date>>,
-    onAddSite: (Campsite) -> Unit,
-    onRemoveSite: (Campsite) -> Unit,
-    selectedSite: Campsite,
-    sites: List<Campsite>
+    siteInfo: MutableMap<Pair<String,String>,MutableList<Date>>,
+    onAddSite: (Lottery) -> Unit,
+    onRemoveSite: (Lottery) -> Unit,
+    selectedLot: Lottery,
+    lotteries: List<Lottery>
 ) {
     var isChecked by remember { mutableStateOf(false)}
     val key = siteInfo.keys.toList()[0]
@@ -278,15 +275,15 @@ fun CampsiteListing (
         Checkbox( // referenced https://developer.android.com/develop/ui/compose/components/checkbox for checkbox implementation
             checked = isChecked,
             onCheckedChange = {
-                if(selectedSite.id == "") {
+                if(selectedLot.id == "") {
                     isChecked = it
-                    for (site in sites) {
-                        if(key == site.name) {
-                            onAddSite(site)
+                    for (lot in lotteries) {
+                        if(key.second == lot.name) {
+                            onAddSite(lot)
                         }
                     }
                 } else {
-                    onRemoveSite(selectedSite)
+                    onRemoveSite(selectedLot)
                 }
                               },
         )
@@ -300,7 +297,14 @@ fun CampsiteListing (
                 modifier = Modifier.fillMaxHeight()
             ) {
                 Text(
-                    key,
+                    key.second,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(7.dp)
+                )
+                Text(
+                    key.first,
                     fontSize = 16.sp,
                     color = Color.DarkGray,
                     fontWeight = FontWeight.Bold,
