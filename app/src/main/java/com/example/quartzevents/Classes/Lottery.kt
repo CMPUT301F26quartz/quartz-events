@@ -13,6 +13,7 @@ class Lottery(
     var winNum: Int?=null,
     val winners: MutableList<Entrant> = mutableListOf()
 ) {
+    var messagingCampsiteIds: List<String> = emptyList()
 
 
     fun add_contestant(contestant: Entrant) {
