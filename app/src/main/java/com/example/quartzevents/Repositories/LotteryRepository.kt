@@ -49,7 +49,7 @@ class LotteryRepository {
      */
     fun addLottery(lottery: Lottery) {
         val lotteryId = lotteryRef.document().id
-        saveLottery(lotteryId, lottery)
+        lotteryRef.document(lotteryId).set(lottery)
     }
 
     /**
@@ -62,17 +62,14 @@ class LotteryRepository {
     }
 
     /**
-     * Replaces the stored lottery with its updated information.
+     * Updates a document in the Lottery object by first removing it, then adding
+     * it back to the collection with the same id and updated info.
      *
      * @property lottery a Lottery object to be used to update the document
      */
     fun updateLottery(lottery: Lottery){
-        saveLottery(lottery.id.toString(), lottery)
-    }
-
-    private fun saveLottery(id: String, lottery: Lottery) {
-        lottery.messagingCampsiteIds = lottery.campsites.map { it.id }.filter { it.isNotBlank() }.distinct()
-        lotteryRef.document(id).set(lottery)
+        deleteLottery(lottery)
+        lotteryRef.document(lottery.id.toString()).set(lottery)
     }
 
     /**
