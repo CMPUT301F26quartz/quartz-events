@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.HouseSiding
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,11 +64,13 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
     var openImages by remember { mutableStateOf(false) }
     var openActivityLog by remember { mutableStateOf(false) }
     var openRatingsAndReviews by remember { mutableStateOf(false) }
+    var openSettings by remember { mutableStateOf(false) }
 
     //TODO: add redirections to other screens
     if(openCampsites){AdminBrowseCampsitesScreen({openCampsites=false})}
     else if(openProfiles){AdminBrowseProfilesScreen({openProfiles=false})}
     else if(openActivityLog){AdminActivityLogsScreen({openActivityLog=false})}
+    else if(openSettings){AdminSettingsScreen({openSettings=false})}
 
     else {
         Column(
@@ -117,7 +120,8 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
             //Box Buttons
             Spacer(modifier = Modifier.height(10.dp))
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
@@ -288,6 +292,40 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
                         )
                     }
                 }//End Ratings and Reviews
+
+                //***** Settings Box *****
+                Spacer(modifier = Modifier.height(15.dp))
+                Box(
+                    modifier = Modifier
+                        .size(350.dp, 80.dp)
+                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
+                        //TODO: make cickable lead to ratings and reviews
+                        .clickable { openSettings = true }
+                ) {
+                    //List Icon
+                    Image(
+                        Icons.Default.Settings,
+                        "Settings Icon",
+                        modifier = Modifier
+                            .padding(horizontal = 5.dp, vertical = 20.dp)
+                            .size(50.dp)
+                    )
+                    //Texts
+                    Column {
+                        Text(
+                            text = "Settings",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            modifier = Modifier
+                                .padding(start = 60.dp, top = 17.dp)
+                        )
+                        Text(
+                            text = "Edit Account Settings and Role View",
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(start = 60.dp, top = 5.dp)
+                        )
+                    }
+                }//End Settings
 
             }//End Boxes
 
