@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quartzevents.Messaging.HomeMessages
 import com.example.quartzevents.model.UserProfile
 
 /**
@@ -24,7 +23,7 @@ import com.example.quartzevents.model.UserProfile
  * @param onLogout Signs the user out.
  */
 @Composable
-fun EntrantHomeScreen(profile: UserProfile, onSearch: () -> Unit, onLogout: () -> Unit, onMessages: () -> Unit) {
+fun EntrantHomeScreen(profile: UserProfile, onSearch: () -> Unit, onLogout: () -> Unit) {
     val darkGreen = Color(0xFF244D3D)
     val backgroundCream = Color(0xFFF7F5ED)
     val cardGray = Color(0xFFD9D9D9)
@@ -51,7 +50,6 @@ fun EntrantHomeScreen(profile: UserProfile, onSearch: () -> Unit, onLogout: () -
             }
 
             Column(Modifier.fillMaxWidth().padding(18.dp)) {
-                HomeMessages(profile.uid, onMessages)
                 Text("Find Your Next Campsite", color = darkGreen, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
                 Button(
