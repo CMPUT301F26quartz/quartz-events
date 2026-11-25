@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.quartzevents.Repositories.AuthRepository
@@ -363,6 +364,15 @@ fun AuthScreen(
         }
         Spacer(modifier = Modifier.height(12.dp))
 
+        //sign in using device
+//        if(!isSignUp){
+//            Button(
+//                onClick= {
+//                    loginByDevice()
+//                }//end onClick
+//            ){}
+//        }
+
         TextButton(
             onClick = {
                 isSignUp = !isSignUp
@@ -380,4 +390,10 @@ fun AuthScreen(
             )
         }
     }
+}
+
+@Composable
+fun loginByDevice(){
+    val context = LocalContext.current
+    val deviceId = getDeviceId(context)
 }
