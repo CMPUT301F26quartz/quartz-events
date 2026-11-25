@@ -48,14 +48,15 @@ fun AdminActivityLogsScreen(back: () -> Unit){
     val usersRepository = remember { UserRepoMain() }
     val users = usersRepository.getAllUsers()
 
+    //TODO: Update permissions for admin's access to messages on firebase
     var messages by remember { mutableStateOf(listOf<Message>()) }
     if(viewNotifications){
-        viewNotifications(messagesRepository, usersRepository)
-//        messages = messagesRepository.getAllNotifications()
+//        viewNotifications(messagesRepository, usersRepository)
+        messages = messagesRepository.getAllNotifications()
 //        if(messages.isEmpty()) println("message notifications are empty")
     }
     else if(viewDirectMessages){
-//        messages = messagesRepository.getAllDirectMessages()
+        messages = messagesRepository.getAllDirectMessages()
 //        if(messages.isEmpty()) println("message directs are empty")
     }
 
@@ -149,53 +150,53 @@ fun AdminActivityLogsScreen(back: () -> Unit){
         )
         Spacer(modifier = Modifier.height(10.dp))
 
-//        Column(
-//            modifier = Modifier.fillMaxWidth()
-//                .verticalScroll(rememberScrollState()),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            for (message in messages) {
-//                //Finding the email of the sender and of the receiver
-//                var senderEmail: String = ""
-//                var receiverEmail: String = ""
-//                for(user in users){
-//                    if(user.uid == message.senderId) senderEmail = user.email
-//                    else if(user.uid == message.receiverId) receiverEmail = user.email
-//                }
-//
-//                //drawing one box for the message's data to be written in
-//                Box(
-//                    modifier = Modifier
-//                        .size(350.dp, 105.dp)
-//                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
-//                ){
-//                    Column {
-//                        //sender email
-//                        Text(
-//                            text = "Sender: $senderEmail",
-//                            fontWeight = FontWeight.Bold,
-//                            fontSize = 15.sp,
-//                            modifier = Modifier.padding(start = 15.dp, top = 15.dp)
-//                        )
-//                        //receiver email
-//                        Text(
-//                            text = "Receiver: $receiverEmail",
-//                            fontSize = 15.sp,
-//                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
-//                        )
-//                        //message
-//                        Text(
-//                            text = "Message: ${message.message}",
-//                            fontSize = 15.sp,
-//                            modifier = Modifier.padding(start = 15.dp, top = 5.dp),
-//                            softWrap = true,
-//                            maxLines = 3,
-//                            overflow = TextOverflow.Ellipsis
-//                        )
-//                    }
-//                }//end message box
-//            }
-//        }//end all messages
+        Column(
+            modifier = Modifier.fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            for (message in messages) {
+                //Finding the email of the sender and of the receiver
+                var senderEmail: String = ""
+                var receiverEmail: String = ""
+                for(user in users){
+                    if(user.uid == message.senderId) senderEmail = user.email
+                    else if(user.uid == message.receiverId) receiverEmail = user.email
+                }
+
+                //drawing one box for the message's data to be written in
+                Box(
+                    modifier = Modifier
+                        .size(350.dp, 105.dp)
+                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
+                ){
+                    Column {
+                        //sender email
+                        Text(
+                            text = "Sender: $senderEmail",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(start = 15.dp, top = 15.dp)
+                        )
+                        //receiver email
+                        Text(
+                            text = "Receiver: $receiverEmail",
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
+                        )
+                        //message
+                        Text(
+                            text = "Message: ${message.message}",
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(start = 15.dp, top = 5.dp),
+                            softWrap = true,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }//end message box
+            }
+        }//end all messages
 
     }
 }
