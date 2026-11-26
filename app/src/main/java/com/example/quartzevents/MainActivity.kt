@@ -29,7 +29,7 @@ import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
-import com.example.quartzevents.OwnerFunctions.CampsiteDetails
+import com.example.quartzevents.EntrantFunctions.CampsiteDetailsScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -133,7 +133,7 @@ fun QuartzEventsApp() {
             if (currentProfile?.role == "owner") {
 
                 if (selectedCampsiteId != null) {
-                    CampsiteDetails(
+                    CampsiteDetailsScreen(
                         campsiteId = selectedCampsiteId!!,
                         onBack = { selectedCampsiteId = null }
                     )

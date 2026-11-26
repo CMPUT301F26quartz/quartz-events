@@ -58,7 +58,7 @@ fun EntrantSearchScreen(onBack: () -> Unit) {
 
     val campsiteId = selectedCampsiteId
     if (campsiteId != null) {
-        CampsiteDetailsScreen(campsiteId, onBack = { selectedCampsiteId = null }, repository = repository)
+        CampsiteDetailsScreen(campsiteId, onBack = { selectedCampsiteId = null })
         return
     }
 

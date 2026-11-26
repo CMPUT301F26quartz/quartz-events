@@ -49,80 +49,74 @@ service cloud.firestore {
     && resource.data.entrantId == request.auth.uid;
     }
 
-    // Messaging permissions
-    match /Reservations/{reservationId} {
-      // Campsite owners can read reservations for their own campsites.
-      allow read: if request.auth != null
-        && get(/databases/$(database)/documents/campsites/$(resource.data.campsiteId)).data.ownerId == request.auth.uid;
+    // Additional access for lotteries, reservations and messaging
+    function signedIn() { return request.auth != null; }
+    function self(uid) { return signedIn() && request.auth.uid == uid; }
+    function staff() {
+      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['owner', 'admin'];
+    }
+    function ownsSite(id) { return self(get(/databases/$(database)/documents/campsites/$(id)).data.ownerId); }
+    function matchesLink(value, collection, id, key) {
+      return value == id || value == /databases/$(database)/documents/$(collection)/$(id)
+        || (value is map && value.get(key, '') == id);
     }
 
-    // A private query context lets Firestore verify the campsite used by a list query.
+    match /Lotteries/{id} {
+      allow read: if signedIn();
+      allow write: if staff();
+      // Compare one membership change, for either joining or leaving.
+      function addsSelf(shorter, longer) {
+        let added = longer.removeAll(shorter);
+        return added.size() == 1 && longer.size() == shorter.size() + 1
+          && longer.removeAll(added) == shorter && matchesLink(added[0], 'users', request.auth.uid, 'uid');
+      }
+      function ownWaitlistChange() {
+        let old = resource.data.get('entrants', []);
+        let before = old == null ? [] : old;
+        let after = request.resource.data.entrants;
+        return before == after || addsSelf(before, after) || addsSelf(after, before);
+      }
+      allow update: if signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['entrants'])
+        && ownWaitlistChange();
+    }
+    match /Reservations/{id} {
+      allow read: if staff() || ownsSite(resource.data.campsiteId);
+      allow create: if self(request.resource.data.entrantId);
+      allow update: if (self(resource.data.entrantId) || staff() || ownsSite(resource.data.campsiteId))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+    }
+    match /CampsiteBookingLocks/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.resource.data.bookedDates is map;
+    }
+
+    // Older Android builds still save this selection before sending.
     match /users/{uid}/messagingContext/campsite {
-      allow get: if request.auth != null && uid == request.auth.uid;
-      allow create, update: if request.auth != null && uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['siteId'])
-        && request.resource.data.siteId is string
-        && get(/databases/$(database)/documents/campsites/$(request.resource.data.siteId)).data.ownerId == uid;
+      allow get, create, update: if self(uid);
     }
-    match /Lotteries/{lotteryId} {
-      function matchesOwnedSite() {
-        let uid = request.auth.uid;
-        let id = get(/databases/$(database)/documents/users/$(uid)/messagingContext/campsite).data.siteId;
-        let site = /databases/$(database)/documents/campsites/$(id);
-        let record = get(site).data;
-        return record.ownerId == uid && (
-          resource.data.campsites.hasAny([site, id, {'id': id}, record.get('id', '') == id ? record : {'id': id}])
-          || id in resource.data.get('messagingCampsiteIds', []));
-      }
-      allow read: if request.auth != null && matchesOwnedSite();
-    }
-
     match /messages/{id} {
-      function senderIsAuthenticated(d) {
-        return request.auth != null && d.senderId == request.auth.uid &&
-          d.senderName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('name', request.auth.uid) &&
-          d.receiverId is string && d.receiverId.size() > 0 &&
-          d.message is string && d.message.size() > 0 && d.message.size() <= 2000 &&
-          d.title is string && d.sentAt == request.time;
-      }
-      function siteMatches(value, id) {
-        return value == id || value == /databases/$(database)/documents/campsites/$(id) ||
-          (value is map && value.get('id', '') == id);
-      }
-      function entrantMatches(value, uid) {
-        return value == uid || value == /databases/$(database)/documents/users/$(uid) ||
-          (value is map && value.get('uid', '') == uid);
-      }
-      function isWaitlistNotice(d) {
+      // A waitlist notice belongs to the selected campsite and an actual waitlisted user.
+      function waitlistNotice(d) {
         let draw = get(/databases/$(database)/documents/Lotteries/$(d.lotteryId)).data;
-        return d.keys().hasOnly(['type','kind','senderId','senderName','receiverId','broadcastId',
-          'title','campsiteId','lotteryId','siteIndex','entrantIndex','message','sentAt']) &&
-          d.kind == 'waitlist_notice' && d.broadcastId is string &&
-          get(/databases/$(database)/documents/campsites/$(d.campsiteId)).data.ownerId == request.auth.uid &&
-          d.siteIndex is int && d.siteIndex >= 0 && d.siteIndex < draw.campsites.size() &&
-          d.entrantIndex is int && d.entrantIndex >= 0 && d.entrantIndex < draw.entrants.size() &&
-          siteMatches(draw.campsites[d.siteIndex], d.campsiteId) &&
-          entrantMatches(draw.entrants[d.entrantIndex], d.receiverId);
+        return d.kind == 'waitlist_notice' && ownsSite(d.campsiteId)
+          && matchesLink(draw.campsites[d.siteIndex], 'campsites', d.campsiteId, 'id')
+          && matchesLink(draw.entrants[d.entrantIndex], 'users', d.receiverId, 'uid');
       }
-      function isReservationMessage(d) {
+      function reservationMail(d) {
         let booking = get(/databases/$(database)/documents/Reservations/$(d.reservationId)).data;
-        let owner = get(/databases/$(database)/documents/campsites/$(booking.campsiteId)).data.ownerId;
-        return d.keys().hasOnly(['type','senderId','senderName','receiverId','reservationId','title','message','sentAt']) &&
-          d.senderId != d.receiverId && ((d.senderId == owner && d.receiverId == booking.entrantId) ||
-            (d.senderId == booking.entrantId && d.receiverId == owner));
+        let entrant = booking.entrantId;
+        let site = booking.campsiteId;
+        let owner = get(/databases/$(database)/documents/campsites/$(site)).data.ownerId;
+        return (d.senderId == owner && d.receiverId == entrant)
+            || (d.senderId == entrant && d.receiverId == owner);
       }
-      allow read: if request.auth != null && (
-        resource.data.get('senderId', '') == request.auth.uid || resource.data.get('receiverId', '') == request.auth.uid);
-      allow create: if senderIsAuthenticated(request.resource.data) &&
-        ((request.resource.data.type == 'notification' && isWaitlistNotice(request.resource.data)) ||
-         (request.resource.data.type == 'direct' && isReservationMessage(request.resource.data)));
+      allow read: if self(resource.data.get('senderId', '')) || self(resource.data.get('receiverId', '')) || isAdmin();
+      allow create: if self(request.resource.data.senderId) && request.resource.data.message is string
+        && ((request.resource.data.type == 'direct' && reservationMail(request.resource.data))
+          || (request.resource.data.type == 'notification' && waitlistNotice(request.resource.data)));
     }
     match /users/{uid}/messageRequests/{requestId} {
-      allow get: if request.auth != null && request.auth.uid == uid;
-      allow create: if request.auth != null && request.auth.uid == uid &&
-        request.resource.data.keys().hasOnly(['target','body','count']) &&
-        request.resource.data.target is string && request.resource.data.body is string &&
-        request.resource.data.body.size() <= 2000 && request.resource.data.count is int && request.resource.data.count > 0;
+      allow get, create: if self(uid);
     }
   }
 }

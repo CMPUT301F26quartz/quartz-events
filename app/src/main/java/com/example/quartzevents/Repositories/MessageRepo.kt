@@ -19,20 +19,18 @@ import com.google.firebase.firestore.Transaction
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 internal data class RecipientOption(val id: String, val site: String, val label: String)
 
-class MessageRepo private constructor(messagesRef: Query, personalMailbox: Boolean) {
-    constructor() : this(Firebase.firestore.collection("messages"), personalMailbox = false)
+class MessageRepo private constructor(messagesRef: Query) {
+    constructor() : this(Firebase.firestore.collection("messages"))
 
     companion object {
         /** Subscribe only to this user's sent or received messages. */
         fun mailboxFor(uid: String, sent: Boolean): MessageRepo {
             val field = if (sent) "senderId" else "receiverId"
             return MessageRepo(Firebase.firestore.collection("messages")
-                .whereEqualTo(field, uid), personalMailbox = true)
+                .whereEqualTo(field, uid))
         }
 
         /** Reads only the open compose tab, using the signed-in user's scoped queries. */
@@ -58,7 +56,7 @@ class MessageRepo private constructor(messagesRef: Query, personalMailbox: Boole
                     when (kind) {
                         "campsite" -> options += RecipientOption(site.id, site.id, name)
                         "waitlist" -> {
-                            val draws = withLotteryAccess(uid, site.id) { lotteriesFor(site) }
+                            val draws = lotteriesFor(site)
                             for (draw in draws) options += RecipientOption(draw.id, site.id,
                                 "$name / ${draw.getString("name") ?: draw.id}")
                         }
@@ -79,26 +77,7 @@ class MessageRepo private constructor(messagesRef: Query, personalMailbox: Boole
             RecipientOption(stay.id, "", listOfNotNull(contact, site.getString("name") ?: site.id,
                 stay.getString("startDate"), stay.id).joinToString(" · "))
 
-        private val lotteryAccess = Mutex()
-
-        private suspend fun <T> withLotteryAccess(uid: String, siteId: String, action: suspend () -> T): T =
-            lotteryAccess.withLock {
-                val context = Firebase.firestore.collection("users").document(uid)
-                    .collection("messagingContext").document("campsite")
-                val selection = mapOf("siteId" to siteId)
-                context.set(selection).await()
-                try {
-                    action()
-                } catch (failure: FirebaseFirestoreException) {
-                    // A second device using this account may have selected another campsite.
-                    if (failure.code != FirebaseFirestoreException.Code.PERMISSION_DENIED ||
-                        context.get(Source.SERVER).await().getString("siteId") == siteId) throw failure
-                    context.set(selection).await()
-                    action()
-                }
-            }
-
-        private suspend fun lotteriesFor(site: DocumentSnapshot): List<DocumentSnapshot> {
+        internal suspend fun lotteriesFor(site: DocumentSnapshot): List<DocumentSnapshot> {
             val links = listOfNotNull(site.reference, site.id, mapOf("id" to site.id),
                 site.data?.takeIf { it["id"] == site.id }).distinct()
             val draws = Firebase.firestore.collection("Lotteries")
@@ -161,13 +140,6 @@ class MessageRepo private constructor(messagesRef: Query, personalMailbox: Boole
             }
 
         internal suspend fun sendWaitlistNotice(campsiteId: String, lotteryId: String?, requestId: String, body: String): Int {
-            val uid = FirebaseAuth.getInstance().uid ?: error("Sign in to send messages.")
-            return withLotteryAccess(uid, campsiteId) {
-                deliverWaitlistNotice(campsiteId, lotteryId, requestId, body)
-            }
-        }
-
-        private suspend fun deliverWaitlistNotice(campsiteId: String, lotteryId: String?, requestId: String, body: String): Int {
             val db = Firebase.firestore
             val siteRef = db.collection("campsites").document(campsiteId)
             val drawRefs = if (lotteryId != null) listOf(db.collection("Lotteries").document(lotteryId))
@@ -225,8 +197,7 @@ class MessageRepo private constructor(messagesRef: Query, personalMailbox: Boole
 
     private val listener: ListenerRegistration = messagesRef.addSnapshotListener { snapshot, error ->
         isLoading = false
-        // Personal inboxes reflect the current query snapshot, including removed messages.
-        if (personalMailbox) _messages.clear()
+        _messages.clear()
         if (error != null) {
             errorMessage = "Couldn't load messages. Please retry."
             return@addSnapshotListener

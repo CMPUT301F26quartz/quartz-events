@@ -22,9 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
+import com.example.quartzevents.Repositories.MessageRepo
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.tasks.await
 
 private val darkGreen = Color(0xFF244D3D)
 private val backgroundCream = Color(0xFFF7F5ED)
@@ -37,21 +40,22 @@ private val textGray = Color(0xFF686868)
  *
  * @param campsiteId The campsite's Firestore document ID.
  * @param onBack Returns to the page that opened these details.
- * @param repository The shared campsite data source owned by the calling page.
  */
 @Composable
-fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit, repository: CampsiteInfoRepository) {
+fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit) {
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
     var isLoading by remember(campsiteId) { mutableStateOf(true) }
     var errorMessage by remember(campsiteId) { mutableStateOf<String?>(null) }
     var reloadCount by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(campsiteId, reloadCount, repository) {
+    LaunchedEffect(campsiteId, reloadCount) {
         isLoading = true
         errorMessage = null
-        repository.getCampsite(campsiteId) { result, error ->
-            campsite = result
-            errorMessage = error
+        try {
+            campsite = CampsiteInfoRepository.getCampsite(campsiteId)
+        } catch (error: FirebaseFirestoreException) {
+            errorMessage = "Couldn't load this campsite. Please retry."
+        } finally {
             isLoading = false
         }
     }
@@ -183,25 +187,19 @@ private fun CampsiteLotteries(campsiteId: String) {
         failed = false
         val db = Firebase.firestore
         val campsite = db.collection("campsites").document(campsiteId)
-        db.collection("Lotteries").whereArrayContains("campsites", campsite)
-            .get(Source.SERVER)
-            .addOnSuccessListener { snapshot ->
-                val openLotteries = mutableListOf<String>()
-                val today = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
-                for (document in snapshot.documents) {
-                    val start = document.get("registrationStart") as? String ?: continue
-                    val end = document.get("registrationEnd") as? String ?: continue
-                    if (registrationIsOpen(start, end, today)) {
-                        openLotteries.add(document.getString("name") ?: "Unnamed lottery")
-                    }
-                }
-                names = openLotteries
-                loading = false
+        try {
+            val draws = MessageRepo.lotteriesFor(campsite.get(Source.SERVER).await())
+            val today = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
+            names = draws.mapNotNull { draw ->
+                val start = registrationDate(draw.get("registrationStart"))
+                val end = registrationDate(draw.get("registrationEnd"))
+                if (registrationIsOpen(start, end, today)) draw.getString("name") ?: "Unnamed lottery" else null
             }
-            .addOnFailureListener {
-                failed = true
-                loading = false
-            }
+        } catch (error: FirebaseFirestoreException) {
+            failed = true
+        } finally {
+            loading = false
+        }
     }
     when {
         loading -> Text("Loading lotteries…", color = textGray)
@@ -217,4 +215,10 @@ private fun CampsiteLotteries(campsiteId: String) {
             }
         }
     }
+}
+
+private fun registrationDate(value: Any?): String = when (value) {
+    is String -> value
+    is Map<*, *> -> value["date"] as? String ?: ""
+    else -> ""
 }

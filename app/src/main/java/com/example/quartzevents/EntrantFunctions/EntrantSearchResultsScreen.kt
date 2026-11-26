@@ -47,7 +47,8 @@ data class CampsiteInfo(
     val rules: String = "",
     val cancellationPolicy: String = "",
     val availableStart: String = "",
-    val availableEnd: String = ""
+    val availableEnd: String = "",
+    val ownerId: String = ""
 )
 
 /**
@@ -79,7 +80,8 @@ internal fun readCampsite(id: String, fields: Map<String, Any>): CampsiteInfo {
         rules = text("rules"),
         cancellationPolicy = text("cancellationPolicy"),
         availableStart = text("availableStart"),
-        availableEnd = text("availableEnd")
+        availableEnd = text("availableEnd"),
+        ownerId = text("ownerId")
     )
 }
 
