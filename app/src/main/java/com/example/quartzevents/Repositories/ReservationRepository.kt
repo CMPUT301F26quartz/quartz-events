@@ -6,6 +6,7 @@ import com.example.quartzevents.Classes.Reservation
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
+import kotlin.text.get
 
 class ReservationRepository {
 
@@ -209,9 +210,12 @@ class ReservationRepository {
 
     // Get all reservations belonging to the logged-in entrant.
     fun getMyReservations(
+        uid2:String = "",
         onResult: (List<Reservation>?, String?) -> Unit
     ) {
-        val uid = auth.currentUser?.uid
+        var uid = auth.currentUser?.uid.toString()
+
+        if(uid2 != "") uid = uid2
 
         if (uid == null) {
             onResult(null, "Please log in first.")
@@ -366,4 +370,44 @@ class ReservationRepository {
                 )
             }
     }
+
+    // Get all reservations belonging to a campsite
+    fun getCampsiteReservations(
+        campId:String?,
+        onResult: (List<Reservation>?, String?) -> Unit
+    ) {
+
+        if (campId == null) {
+            onResult(null, "Please provide a campsite.")
+            return
+        }
+
+        reservations.whereEqualTo("campsiteId", campId)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                try {
+                    val list = snapshot.toObjects(
+                        Reservation::class.java
+                    )
+
+                    onResult(
+                        list.sortedByDescending { it.startDate },
+                        null
+                    )
+                } catch (e: Exception) {
+                    onResult(
+                        null,
+                        e.message ?: "Could not read reservations."
+                    )
+                }
+            }
+            .addOnFailureListener { error ->
+                onResult(
+                    null,
+                    error.message ?: "Could not load reservations."
+                )
+            }
+    }
+
+
 }

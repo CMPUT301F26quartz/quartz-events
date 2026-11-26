@@ -12,6 +12,7 @@
 
 package com.example.quartzevents.Classes
 
+
 abstract class User(
     var email: String = "",
     var name: String = "",

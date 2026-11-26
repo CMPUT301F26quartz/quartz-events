@@ -11,6 +11,8 @@
 
 package com.example.quartzevents.Classes
 
+import java.util.Collections.emptyList
+
 class Entrant(
     email: String = "",
     name: String = "",
