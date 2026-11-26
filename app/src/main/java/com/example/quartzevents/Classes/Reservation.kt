@@ -1,5 +1,14 @@
 package com.example.quartzevents.Classes
 
-class Reservation(val entrantName: String, val campsite: Campsite, var guests: Int, val start: Date, val end: Date) {
-
-}
+data class Reservation(
+    val id: String = "",
+    val entrantId: String = "",
+    val entrantName: String = "",
+    val campsiteId: String = "",
+    val lotteryId: String = "",
+    val guests: Int = 1,
+    val startDate: String = "",
+    val endDate: String= "",
+    val status: String = "confirmed",
+    val createdAt: Long = 0L
+)
