@@ -14,6 +14,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
+import android.util.Log
 
 class UserRepoMain {
     private val db = Firebase.firestore
@@ -22,6 +23,7 @@ class UserRepoMain {
 
     var isLoading by mutableStateOf(true)
         private set
+
     /** The most recent list-loading error, or null when the listener succeeds. */
     var errorMessage by mutableStateOf<String?>(null)
         private set
@@ -37,10 +39,10 @@ class UserRepoMain {
         _users.clear()
         snapshot?.documents?.forEach { document ->
             val user: User? = when (document.getString("role")) {
-                "admin"   -> document.toObject(Admin::class.java)
-                "owner"   -> document.toObject(Owner::class.java)
+                "admin" -> document.toObject(Admin::class.java)
+                "owner" -> document.toObject(Owner::class.java)
                 "entrant" -> document.toObject(Entrant::class.java)
-                else      -> null
+                else -> null
             }
             if (user != null) _users.add(user)
         }
@@ -52,47 +54,49 @@ class UserRepoMain {
         listener.remove()
     }
 
-    fun getAllUsers():List<User>{
+    fun getAllUsers(): List<User> {
         return _users
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun getAllAdmin():List<Admin>{
-        return _users.filter{it.role == "admin"} as List<Admin>
+    fun getAllAdmin(): List<Admin> {
+        return _users.filter { it.role == "admin" } as List<Admin>
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun getAllOwners():List<Owner>{
-        return _users.filter{it.role == "owner"} as List<Owner>
+    fun getAllOwners(): List<Owner> {
+        return _users.filter { it.role == "owner" } as List<Owner>
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun getAllEntrants():List<Entrant>{
-        return _users.filter{it.role == "entrant"} as List<Entrant>
+    fun getAllEntrants(): List<Entrant> {
+        return _users.filter { it.role == "entrant" } as List<Entrant>
     }
 
-    fun getUser(uid:String):User?{
-        for(user in _users){
-            if(uid == user.uid) return user
+    fun getUser(uid: String): User? {
+        for (user in _users) {
+            if (uid == user.uid) return user
         }
         return null
     }
 
-    fun addDevice(uid:String, id:String){
+    fun addDevice(uid: String, id: String) {
         db.collection("users")
             .whereEqualTo("uid", uid)
             .get()
             .addOnSuccessListener { result ->
                 val doc = result.documents.firstOrNull()
-                if(doc!=null){
-                    doc.reference.update("deviceLogin", true)
-                    doc.reference.update("deviceId", FieldValue.arrayUnion(id))
+                if (doc == null) {
+                    Log.w("addDevice", "No user with uid $uid found")
+                    return@addOnSuccessListener
                 }
-                else{
-                    error("No user with that uid found")
-                }
+                doc.reference.update(
+                    mapOf(
+                        "deviceLogin" to true,
+                        "deviceId" to FieldValue.arrayUnion(id)
+                    )
+                ).addOnFailureListener { e -> Log.e("addDevice", "Update failed", e) }
             }
-            .addOnFailureListener { error("Attempt failed") }
+            .addOnFailureListener { e -> Log.e("addDevice", "Query failed", e) }
     }
-
 }

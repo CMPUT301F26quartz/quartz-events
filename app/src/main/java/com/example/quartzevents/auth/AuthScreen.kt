@@ -103,6 +103,7 @@ fun AuthScreen(
 
     val context = LocalContext.current
     val deviceId = getDeviceId(context)
+    println("******************* DeviceId = $deviceId **********************")
 
     val isSignUpValid = firstName.isNotBlank() &&
             lastName.isNotBlank() &&
@@ -272,7 +273,7 @@ fun AuthScreen(
                 checked = saveDevice,
                 onCheckedChange = {saveDevice = it}
             )
-            Spacer(modifier = Modifier.width(3.dp))
+            Spacer(modifier = Modifier.width(1.dp))
             Text(
                 text = "Remember me by this device."
             )
@@ -402,10 +403,16 @@ fun AuthScreen(
             var deviceFound = false
             Button(
                 onClick= {
+                    //TODO: change permissions in firebase, test, get rid of all the println's
+                    println("############ Device button clicked ################")
+                    println("################## Num of users is ${users.size} ##############")
                     for(user in users){
                         if(user.deviceLogin){
+                            println("################# deviceLogin is true #################")
                             for(id in user.deviceId){
+                                println("################################# id is: $id ###############")
                                 if(deviceId == id){
+                                    println("################# deviceId Matches #################")
                                     deviceFound = true
                                     repository.login(deviceId = deviceId){ success, error ->
                                         if (success) {
