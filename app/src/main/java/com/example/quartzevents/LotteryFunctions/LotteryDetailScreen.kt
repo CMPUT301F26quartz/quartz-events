@@ -38,6 +38,7 @@ import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.LotteryRepository
 import com.example.quartzevents.Repositories.UserRepoMain
 
@@ -48,14 +49,14 @@ fun LotteryDetailScreen (
     onAddClick: () -> Unit,
     onBack: () -> Unit
 ) {
-    val lotRepo = LotteryRepository()
+    val lotRepo = remember { LotteryRepository() }
     val lotteries = lotRepo.getAllLotteries()
     var lottery = Lottery()
     lotteries.forEach{ item ->
         if (item.id == lotteryId)
             lottery = item
     }
-    val userRepo = UserRepoMain()
+    val userRepo = remember { UserRepoMain() }
     val entrants = userRepo.getAllEntrants()
     var entrant = Entrant()
     entrants.forEach{ item ->
@@ -138,10 +139,17 @@ fun LotteryDetailScreen (
                         fontSize = 23.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    val campRepo = remember { CampsiteRepoMain() }
+                    val campsites = campRepo.getAllCamsites()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(top = 5.dp)
                     ) {
-                        itemsIndexed(lottery.campsites) { index, campsite ->
+                        itemsIndexed(lottery.campsites) { index, campsiteId ->
+                            var campsite = Campsite()
+                            campsites.forEach { item ->
+                                if (item.id == campsiteId)
+                                    campsite = item
+                            }
                             CampDisplay(
                                 campsite = campsite
                             )
@@ -162,16 +170,16 @@ fun LotteryDetailScreen (
                             .padding(top = 5.dp)
                             .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
                     ) {
-                        var regDates: String = ""
-                        regDates += "Registration: " + months.get(
-                            lottery.registrationStart.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.registrationStart.dateStr()
-                            .slice(8..lottery.registrationStart.dateStr().length - 1)
-                            .toInt().toString() + " - " + months.get(
-                            lottery.registrationEnd.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.registrationEnd.dateStr()
-                            .slice(8..lottery.registrationEnd.dateStr().length - 1)
-                            .toInt().toString() + ", " + lottery.registrationEnd.dateStr()
+                        var regDates = ""
+                        regDates += "Registration: " + months[
+                            lottery.registrationStart.slice(5..6).toInt()
+                        ] + " " + lottery.registrationStart
+                            .slice(8..<lottery.registrationStart.length)
+                            .toInt().toString() + " - " + months[
+                            lottery.registrationEnd.slice(5..6).toInt()
+                        ] + " " + lottery.registrationEnd
+                            .slice(8..<lottery.registrationEnd.length)
+                            .toInt().toString() + ", " + lottery.registrationEnd
                             .slice(0..3)
                         Text(
                             regDates,
@@ -191,16 +199,16 @@ fun LotteryDetailScreen (
                             .padding(top = 5.dp)
                             .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
                     ) {
-                        var bookDates: String = ""
-                        bookDates += "Registration: " + months.get(
-                            lottery.bookingStart.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.bookingStart.dateStr()
-                            .slice(8..lottery.bookingStart.dateStr().length - 1)
-                            .toInt().toString() + " - " + months.get(
-                            lottery.bookingEnd.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.bookingEnd.dateStr()
-                            .slice(8..lottery.bookingEnd.dateStr().length - 1)
-                            .toInt().toString() + ", " + lottery.bookingEnd.dateStr().slice(0..3)
+                        var bookDates = ""
+                        bookDates += "Registration: " + months[
+                            lottery.bookingStart.slice(5..6).toInt()
+                        ] + " " + lottery.bookingStart
+                            .slice(8..<lottery.bookingStart.length)
+                            .toInt().toString() + " - " + months[
+                            lottery.bookingEnd.slice(5..6).toInt()
+                        ] + " " + lottery.bookingEnd
+                            .slice(8..<lottery.bookingEnd.length)
+                            .toInt().toString() + ", " + lottery.bookingEnd.slice(0..3)
                         Text(
                             bookDates,
                             fontSize = 20.sp,

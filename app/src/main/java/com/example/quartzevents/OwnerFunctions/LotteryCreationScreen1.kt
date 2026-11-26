@@ -65,7 +65,7 @@ fun LotteryCreationScreen1(
     onSelectSites: (String) -> Unit,
     onBack: () -> Unit
 ){
-    val campRepo = CampsiteRepoMain()
+    val campRepo = remember { CampsiteRepoMain() }
     val ownerSites = campRepo.getOwnerCampsites(profile.uid)
     var selectedSites by remember {mutableStateOf("")}
 
@@ -127,8 +127,8 @@ fun LotteryCreationScreen1(
                         SiteNameListing( // call composable function that builds each lottery display
                             selectedSites,
                             site = site,
-                            onAddSite = { it },
-                            onRemoveSite = { it }
+                            onAddSite = { sites -> selectedSites = sites },
+                            onRemoveSite = { sites -> selectedSites = sites }
                         )
                         if (index < ownerSites.lastIndex) {
                             HorizontalDivider()
@@ -207,7 +207,7 @@ fun SiteNameListing (
                            sites += " " + ids[id]
                         }
                     }
-                    onRemoveSite(siteId)
+                    onRemoveSite(sites)
                 }
                               },
         )

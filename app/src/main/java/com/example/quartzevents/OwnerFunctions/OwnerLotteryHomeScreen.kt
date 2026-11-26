@@ -84,13 +84,14 @@ fun OwnerLotteryHomeScreen(
     onLotterySelect: (String?) -> Unit,
     onUpdateLottery: () -> Unit
 ){
-    val campRepo = CampsiteRepoMain()
-    val campsites = campRepo.getAllCamsites()
-    val lotRepo = LotteryRepository()
+    val campRepo = remember { CampsiteRepoMain() }
+    val allCampsites = campRepo.getAllCamsites()
+    var campsites: MutableList<Campsite>
+    val lotRepo = remember { LotteryRepository() }
     val lotteries = lotRepo.getAllLotteries()
     var updateScreen by remember {mutableStateOf(false)}
-    var campInfo: MutableList<MutableMap<Pair<String,String>,MutableList<Date>>> = mutableListOf<MutableMap<Pair<String,String>,MutableList<Date>>>()
-    var selectedLot = Lottery()
+    var campInfo: MutableList<MutableMap<Pair<String,String>,MutableList<String>>> = mutableListOf<MutableMap<Pair<String,String>,MutableList<String>>>()
+    var selectedLot by remember {mutableStateOf(Lottery())}
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -140,10 +141,17 @@ fun OwnerLotteryHomeScreen(
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
                 for (lottery in lotteries) {
+                    campsites = mutableListOf()
                     for (site in lottery.campsites) { // ensures a site is only listed if the owner owns it
+                        allCampsites.forEach { item ->
+                            if (item.id == site)
+                                campsites.add(item)
+                        }
+                    }
+                    for (site in campsites) {
                         campInfo.add(
                             mutableMapOf(
-                                Pair(site.name,lottery.name) to mutableListOf(
+                                Pair(site.name, lottery.name) to mutableListOf(
                                     lottery.registrationStart,
                                     lottery.registrationEnd
                                 )
@@ -182,7 +190,10 @@ fun OwnerLotteryHomeScreen(
                     ) {
                         Button(  // Edit Button
                             onClick = {
-                                updateScreen = true
+                                if(profile.uid == selectedLot.creatorId) {
+                                    onLotterySelect (selectedLot.id)
+                                    onUpdateLottery()
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.DarkGray
@@ -229,12 +240,6 @@ fun OwnerLotteryHomeScreen(
             }
         }
     }
-    if (updateScreen) {
-        if(profile.uid == selectedLot.creatorId) {
-            onLotterySelect (selectedLot.id)
-            onUpdateLottery()
-        }
-    }
     BackHandler (onBack = onBack)
 }
 
@@ -258,13 +263,12 @@ fun OwnerLotteryHomeScreen(
  */
 @Composable
 fun CampsiteListing (
-    siteInfo: MutableMap<Pair<String,String>,MutableList<Date>>,
+    siteInfo: MutableMap<Pair<String,String>,MutableList<String>>,
     onAddSite: (Lottery) -> Unit,
     onRemoveSite: (Lottery) -> Unit,
     selectedLot: Lottery,
     lotteries: List<Lottery>
 ) {
-    var isChecked by remember { mutableStateOf(false)}
     val key = siteInfo.keys.toList()[0]
     val dates = siteInfo[key]
     Row (
@@ -272,20 +276,21 @@ fun CampsiteListing (
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        Checkbox( // referenced https://developer.android.com/develop/ui/compose/components/checkbox for checkbox implementation
-            checked = isChecked,
-            onCheckedChange = {
-                if(selectedLot.id == "") {
-                    isChecked = it
-                    for (lot in lotteries) {
-                        if(key.second == lot.name) {
-                            onAddSite(lot)
-                        }
+        val associatedLottery = lotteries.find {
+            it.name == key.second
+        }
+
+        Checkbox(
+            checked = selectedLot.id == associatedLottery?.id,
+            onCheckedChange = { checked ->
+                if (checked) {
+                    associatedLottery?.let {
+                        onAddSite(it)
                     }
                 } else {
                     onRemoveSite(selectedLot)
                 }
-                              },
+            }
         )
         Box (
             modifier = Modifier
@@ -311,14 +316,14 @@ fun CampsiteListing (
                     modifier = Modifier.padding(5.dp)
                 )
                 Text(
-                    "From: "+ dates?.get(0)?.dateStr(),
+                    "From: "+ dates?.get(0),
                     fontSize = 12.sp,
                     color = Color.Gray,
                     modifier = Modifier.padding(start = 8.dp,bottom = 5.dp)
                 )
 
                 Text(
-                    "To: "+ dates?.get(1)?.dateStr(),
+                    "To: "+ dates?.get(1),
                     fontSize = 12.sp,
                     color = Color.Gray,
                     modifier = Modifier.padding(start =8.dp, bottom = 5.dp)

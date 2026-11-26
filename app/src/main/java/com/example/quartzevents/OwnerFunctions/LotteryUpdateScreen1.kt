@@ -50,12 +50,11 @@ fun LotteryUpdateScreen1(
     onSelectSites: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    val campRepo = CampsiteRepoMain()
+    val campRepo = remember { CampsiteRepoMain() }
     var campsites = campRepo.getAllCamsites()
     val ownerSites = campRepo.getOwnerCampsites(profile.uid)
-    val lotRepo = LotteryRepository()
+    val lotRepo = remember { LotteryRepository() }
     val lottery = lotRepo.getLottery(lotteryId!!)
-    var nextScreen by remember { mutableStateOf(false) }
     var selectedSites by remember { mutableStateOf("") }
 
 
@@ -208,7 +207,7 @@ fun SiteUpdateNameListing(
 ) {
     val siteId = site.id
     var isChecked by remember { mutableStateOf(false) }
-    if (site in lottery!!.campsites) {
+    if (siteId in lottery!!.campsites) {
         isChecked = true
     }
     Row(

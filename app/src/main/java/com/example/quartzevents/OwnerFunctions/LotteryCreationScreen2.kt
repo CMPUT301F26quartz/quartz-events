@@ -69,19 +69,18 @@ fun LotteryCreationScreen2(
     selectedSites: MutableList<String?>,
     onBack: () -> Unit
 ) {
-    val lotRepo = LotteryRepository()
-    val campRepo = CampsiteRepoMain()
+    val lotRepo = remember { LotteryRepository() }
+    val campRepo = remember { CampsiteRepoMain() }
     val campsites = campRepo.getAllCamsites()
-    var backB by remember { mutableStateOf(false) } // used in button presses for changing screens
     var regStartInput by remember { mutableStateOf("") }
     var regEndInput by remember { mutableStateOf("") }
     var bookStartInput by remember { mutableStateOf("") }
     var bookEndInput by remember { mutableStateOf("") }
     var nameInput by remember { mutableStateOf("") }
-    var capacityInput by remember { mutableIntStateOf(0) }
-    var entrantsInput: MutableList<Entrant> = mutableListOf()
+    var capacityInput by remember { mutableStateOf("") }
+    var entrantsInput: MutableList<String> = mutableListOf()
     var winnersInput: MutableList<String> = mutableListOf()
-    var winNumInput by remember {mutableIntStateOf(0)}
+    var winNumInput by remember {mutableStateOf("")}
     val dateFormat =
         Regex("""^(\d{4})-(0[1-9]|1[0-2]|[1-9])-([1-9]|0[1-9]|[1-2]\d|3[0-1])$""") // for checking if entered date is in the correct format: from https://regex101.com/library/oE3yO7 and https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.text/-regex/
     val superscript = SpanStyle(
@@ -323,13 +322,17 @@ fun LotteryCreationScreen2(
                 )
 
                 OutlinedTextField(
-                    value = winNumInput.toString(),
-                    onValueChange = { winNumInput = it.toInt() },
+                    value = winNumInput,
+                    onValueChange = { newText ->
+                        if(newText.all {it.isDigit()})
+                            winNumInput = newText
+                                    },
                     singleLine = true,
                     modifier = Modifier.size(320.dp, 70.dp)
                         .background(color = Color.LightGray),
                     label = { Text("Please Enter the Number of Winners of the Lottery", color = Color.Gray) }
                 )
+
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
@@ -342,49 +345,45 @@ fun LotteryCreationScreen2(
                 )
 
                 OutlinedTextField(
-                    value = capacityInput.toString(),
-                    onValueChange = { capacityInput = it.toInt() },
+                    value = capacityInput,
+                    onValueChange = { newText ->
+                        if(newText.all {it.isDigit()})
+                            capacityInput = newText
+                    },
                     singleLine = true,
                     modifier = Modifier.size(320.dp, 70.dp)
                         .background(color = Color.LightGray),
                     label = { Text("Please Enter the Maximum Entrants into the Lottery, (or zero for unlimited)", color = Color.Gray) }
                 )
 
-                val finalSites = mutableListOf<Campsite>()
-                for (id in selectedSites) {
-                    for (site in campsites) {
-                        if (id == site.id) {
-                            finalSites.add(site)
-                        }
-                    }
-                }
-
                 Button(
                     onClick = {
+                        val winNum = winNumInput.toIntOrNull() ?: 1
+                        val capacity = capacityInput.toIntOrNull() ?: 10
                         if (regStartInput != "" &&
                             regEndInput != "" &&
                             bookStartInput != "" &&
                             bookEndInput != "" &&
                             nameInput != "" &&
-                            finalSites.isNotEmpty() &&
-                            entrantsInput.isNotEmpty() &&
-                            winNumInput != 0 &&
+                            selectedSites.isNotEmpty() &&
+                            winNum != 0 &&
                             dateFormat.matches(regStartInput) &&
                             dateFormat.matches(regEndInput) &&
                             dateFormat.matches(bookStartInput) &&
                             dateFormat.matches(bookEndInput)
                         ) {
-                            lotRepo.addLottery(Lottery(finalSites,
+                            lotRepo.addLottery(Lottery(
+                                selectedSites as MutableList<String>,
                                 nameInput,
-                                Date(regStartInput),
-                                Date(regEndInput),
-                                Date(bookStartInput),
-                                Date(bookStartInput),
-                                capacityInput,
+                                regStartInput,
+                                regEndInput,
+                                bookStartInput,
+                                bookEndInput,
+                                capacity,
                                 "",
                                 profile.uid,
                                 entrantsInput,
-                                winNumInput,
+                                winNum,
                                 winnersInput))
 
 

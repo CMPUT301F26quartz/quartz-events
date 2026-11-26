@@ -115,7 +115,7 @@ fun QuartzEventsApp() {
             isLoading = false
         }
     }
-    checkLotteries()
+    //CheckLotteries()
     when {
         // Show loading indicator
         isLoading -> {
@@ -179,7 +179,7 @@ fun QuartzEventsApp() {
                         currentProfile!!,
                         onCreateLottery = { isCreatingLottery1 = true; isViewingLottery = false },
                         onLotterySelect = { id -> selectedLotteryId = id },
-                        onUpdateLottery = { isUpdatingLottery1 = true },
+                        onUpdateLottery = { isUpdatingLottery1 = true; isViewingLottery = false },
                         onBack = { isViewingLottery = false }
                     )
 
@@ -319,22 +319,22 @@ private fun SearchCampsitesButton(
  * start the lottery winner process if today is equal to or after the end of
  * registration.
  */
-private fun checkLotteries(){
-    val lotRepo = LotteryRepository()
-    val lotteries = lotRepo.getAllLotteries()
-    val today = Date(LocalDate.now(ZoneOffset.UTC).toString()) // get current date in UTC
-    if (lotteries.isNotEmpty()) {
-        lotteries.forEach { item -> // check each lottery in the collection
-            if (item.registrationEnd.isEqual(today) || item.registrationEnd.isAfter(today)) {
-                if (item.creatorId != null) {
-                    item.selectWinner(item.creatorId)
-                } else {
-                    throw Error("Could Not Parse Owner Id")
-                }
-            }
-        }
-    }
+//@Composable
+//private fun CheckLotteries(){
+//    val lotRepo = remember { LotteryRepository() }
+//    val lotteries = lotRepo.getAllLotteries()
+//    val today = Date(LocalDate.now(ZoneOffset.UTC).toString()) // get current date in UTC
+//    if (lotteries.isNotEmpty()) {
+//        lotteries.forEach { item -> // check each lottery in the collection
+//            if (Date(item.registrationEnd).isEqual(today) || Date(item.registrationEnd).isAfter(today)) {
+//                if (item.creatorId != null) {
+//                    item.selectWinner(item.creatorId)
+//                } else {
+//                    throw Error("Could Not Parse Owner Id")
+//                }
+//            }
+//        }
 //    } else {
 //        throw Error("No Lotteries Found.")
 //    }
-}
+//}

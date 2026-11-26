@@ -55,16 +55,14 @@ fun LotteryUpdateScreen2(
     lotteryId: String?,
     onBack: () -> Unit
 ) {
-    val lotRepo = LotteryRepository()
-    val campRepo = CampsiteRepoMain()
-    val campsites = campRepo.getAllCamsites()
+    val lotRepo = remember { LotteryRepository() }
     var regStartInput by remember { mutableStateOf("") }
     var regEndInput by remember { mutableStateOf("") }
     var bookStartInput by remember { mutableStateOf("") }
     var bookEndInput by remember { mutableStateOf("") }
     var nameInput by remember { mutableStateOf("") }
     var capacityInput by remember { mutableIntStateOf(0) }
-    var entrantsInput: MutableList<Entrant> = mutableListOf()
+    val entrantsInput: MutableList<String> = mutableListOf()
     var winnersInput by remember {mutableIntStateOf(0)}
     val dateFormat =
         Regex("""^(19|20)\d{2}-(0[1-9]|1[0,1,2])-(0[1-9]|[12][0-9]|3[01])$""") // for checking if entered date is in the correct format
@@ -333,15 +331,6 @@ fun LotteryUpdateScreen2(
                     label = { Text("Please Enter the Maximum Entrants into the Lottery, (or zero for unlimited)", color = Color.Gray) }
                 )
 
-                val finalSites = mutableListOf<Campsite>()
-                for (id in selectedSites) {
-                    for (site in campsites) {
-                        if (id == site.id) {
-                            finalSites.add(site)
-                        }
-                    }
-                }
-
                 Button(
                     onClick = {
                         if (regStartInput != "" &&
@@ -349,7 +338,7 @@ fun LotteryUpdateScreen2(
                             bookStartInput != "" &&
                             bookEndInput != "" &&
                             nameInput != "" &&
-                            finalSites.isNotEmpty() &&
+                            selectedSites.isNotEmpty() &&
                             entrantsInput.isNotEmpty() &&
                             winnersInput != 0 &&
                             dateFormat.matches(regStartInput) &&
@@ -359,12 +348,12 @@ fun LotteryUpdateScreen2(
                         ) {
                             lotRepo.updateLottery(
                                 Lottery(
-                                    finalSites,
+                                    selectedSites as MutableList<String>,
                                     nameInput,
-                                    Date(regStartInput),
-                                    Date(regEndInput),
-                                    Date(bookStartInput),
-                                    Date(bookEndInput),
+                                    regStartInput,
+                                    regEndInput,
+                                    bookStartInput,
+                                    bookEndInput,
                                     capacityInput,
                                     lotteryId,
                                     profile.uid,

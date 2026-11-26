@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
@@ -46,7 +47,7 @@ fun ActiveLotteriesScreen(
     onLotClick: () -> Unit,
     onBack: () -> Unit
 ){
-    val lotRepo = LotteryRepository()
+    val lotRepo = remember { LotteryRepository() }
     val lotteries = lotRepo.getAllLotteries()
 
     Column(
@@ -127,6 +128,8 @@ fun CampsiteLotteryDisplay ( // Framework for the Box displays of Lottery Info
     lottery: Lottery,
     onClick: () -> Unit
 ){
+    val campRepo = remember { CampsiteRepoMain() }
+    val campsites = campRepo.getAllCamsites()
     val months: MutableMap<Int, String> = mutableMapOf( // For use in converting Dates to more readable forms
         Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec")
     )
@@ -155,7 +158,12 @@ fun CampsiteLotteryDisplay ( // Framework for the Box displays of Lottery Info
                 )
                 var status: String = ""
                 var sites: String = ""
-                lottery.campsites.forEach { site ->
+                lottery.campsites.forEach { siteId ->
+                    var site = Campsite()
+                    campsites.forEach { item ->
+                        if (item.id == siteId)
+                            site = item
+                    }
                     sites += site.name + "  "
                 }
                 if (lottery.entrants.size == lottery.capacity) { // Show unavailable if the lottery capacity is hit
@@ -175,13 +183,13 @@ fun CampsiteLotteryDisplay ( // Framework for the Box displays of Lottery Info
                     color = Color.Gray
                 )
                 var regDates: String = ""
-                regDates += "Registration: " + months.get( // puts Registration dates into a "Month day - Month day, year" format
-                    lottery.registrationStart.date.slice(5..6).toInt()
-                ) + " " + lottery.registrationStart.date.slice(8..lottery.registrationStart.date.length - 1)
-                    .toInt().toString() + " - " + months.get(
-                    lottery.registrationEnd.date.slice(5..6).toInt()
-                ) + " " + lottery.registrationEnd.date.slice(8..lottery.registrationEnd.date.length - 1)
-                    .toInt().toString() + ", " + lottery.registrationEnd.date.slice(0..3)
+                regDates += "Registration: " + months[ // puts Registration dates into a "Month day - Month day, year" format
+                    lottery.registrationStart.slice(5..6).toInt()
+                ] + " " + lottery.registrationStart.slice(8..<lottery.registrationStart.length)
+                    .toInt().toString() + " - " + months[
+                    lottery.registrationEnd.slice(5..6).toInt()
+                ] + " " + lottery.registrationEnd.slice(8..<lottery.registrationEnd.length)
+                    .toInt().toString() + ", " + lottery.registrationEnd.slice(0..3)
                 Text(
                     regDates,
                     fontSize = 15.sp,
