@@ -13,7 +13,9 @@ package com.example.quartzevents.Classes
 class Admin(
     email: String = "",
     name: String = "",
-    uid: String = ""
-) : User(email, name, role = "admin", uid = uid) {
+    uid: String = "",
+    deviceLogin: Boolean = false,
+    deviceId: List<String> = emptyList()
+) : User(email, name, role = "admin", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId) {
     val messages: MutableList<Message> = mutableListOf()
 }

@@ -14,8 +14,10 @@ package com.example.quartzevents.Classes
 class Owner(
     email: String = "",
     name: String = "",
-    uid: String = ""
-) : User(email, name, role = "owner", uid = uid) {
+    uid: String = "",
+    deviceLogin: Boolean = false,
+    deviceId: List<String> = emptyList()
+) : User(email, name, role = "owner", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId) {
     val campsites: MutableList<Campsite> = mutableListOf()
     val messages: MutableList<Message> = mutableListOf()
 }

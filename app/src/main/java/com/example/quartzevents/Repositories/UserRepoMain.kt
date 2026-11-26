@@ -11,6 +11,7 @@ import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Owner
 import com.example.quartzevents.Classes.User
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
 
@@ -68,6 +69,30 @@ class UserRepoMain {
     @Suppress("UNCHECKED_CAST")
     fun getAllEntrants():List<Entrant>{
         return _users.filter{it.role == "entrant"} as List<Entrant>
+    }
+
+    fun getUser(uid:String):User?{
+        for(user in _users){
+            if(uid == user.uid) return user
+        }
+        return null
+    }
+
+    fun addDevice(uid:String, id:String){
+        db.collection("users")
+            .whereEqualTo("uid", uid)
+            .get()
+            .addOnSuccessListener { result ->
+                val doc = result.documents.firstOrNull()
+                if(doc!=null){
+                    doc.reference.update("deviceLogin", true)
+                    doc.reference.update("deviceId", FieldValue.arrayUnion(id))
+                }
+                else{
+                    error("No user with that uid found")
+                }
+            }
+            .addOnFailureListener { error("Attempt failed") }
     }
 
 }

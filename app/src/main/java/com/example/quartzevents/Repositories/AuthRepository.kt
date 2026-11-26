@@ -55,17 +55,24 @@ class AuthRepository {
 
     //Log in an existing user
     fun login(
-        email: String,
-        password: String,
+        email: String = "",
+        password: String = "",
+        deviceId: String = "",
         onResult: (Boolean, String?) -> Unit
     ) {
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                onResult(true, null)
-            }
-            .addOnFailureListener { exception ->
-                onResult(false, exception.message)
-            }
+        if(email != "") {
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnSuccessListener {
+                    onResult(true, null)
+                }
+                .addOnFailureListener { exception ->
+                    onResult(false, exception.message)
+                }
+
+        }
+        else if(deviceId!=""){
+            onResult(true, null)
+        }
 
     }
 

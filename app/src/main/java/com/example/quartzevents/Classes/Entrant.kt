@@ -14,8 +14,10 @@ package com.example.quartzevents.Classes
 class Entrant(
     email: String = "",
     name: String = "",
-    uid: String = ""
-) : User(email, name, role = "entrant", uid = uid) {
+    uid: String = "",
+    deviceLogin: Boolean = false,
+    deviceId: List<String> = emptyList()
+) : User(email, name, role = "entrant", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId) {
 
     val reservations: MutableList<Reservation> = mutableListOf()
     var notificationsOn = true

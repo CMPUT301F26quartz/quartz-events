@@ -5,6 +5,7 @@ package com.example.quartzevents.auth
  * Handles user input, form validation, and authentication through AuthRepository.
  */
 import android.util.Patterns
+import android.widget.CheckBox
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -84,6 +85,7 @@ fun AuthScreen(
     onAuthenticated: (UserProfile) -> Unit
 ) {
     val repository = remember { AuthRepository() }
+    val userRepo = remember { UserRepoMain() }
 
     var isSignUp by remember { mutableStateOf(false) }
     var firstName by remember { mutableStateOf("") }
@@ -96,6 +98,11 @@ fun AuthScreen(
     var selectedRole by remember { mutableStateOf("entrant")}
     var isLoading by remember { mutableStateOf(false)}
     var errorMessage by remember { mutableStateOf<String?>(null)}
+    var saveDevice by remember{mutableStateOf(false)}
+
+
+    val context = LocalContext.current
+    val deviceId = getDeviceId(context)
 
     val isSignUpValid = firstName.isNotBlank() &&
             lastName.isNotBlank() &&
@@ -258,6 +265,19 @@ fun AuthScreen(
                 Text("Owner")
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = saveDevice,
+                onCheckedChange = {saveDevice = it}
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+                text = "Remember me by this device."
+            )
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
         if(errorMessage != null) {
             Text(
@@ -266,6 +286,7 @@ fun AuthScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
+
 
         Button(
             onClick = {
@@ -327,7 +348,13 @@ fun AuthScreen(
                                     repository.getUserProfile(uid) { profile, profileError ->
                                         isLoading = false
                                         if (profile != null) {
+
+                                            if(saveDevice){
+                                                userRepo.addDevice(uid, deviceId)
+                                            }
+
                                             onAuthenticated(profile)
+
                                         } else {
                                             errorMessage = profileError
                                                 ?: "Could not load user profile."
@@ -371,16 +398,15 @@ fun AuthScreen(
 
 //        sign in using device
         if(!isSignUp){
-            val context = LocalContext.current
-            val deviceId = getDeviceId(context)
-            val userRepository = remember{ UserRepoMain() }
-            var users = userRepository.getAllUsers()
+            var users = userRepo.getAllUsers()
+            var deviceFound = false
             Button(
                 onClick= {
                     for(user in users){
                         if(user.deviceLogin){
                             for(id in user.deviceId){
                                 if(deviceId == id){
+                                    deviceFound = true
                                     repository.login(deviceId = deviceId){ success, error ->
                                         if (success) {
                                             val uid = repository.getCurrentUserId()
@@ -406,6 +432,11 @@ fun AuthScreen(
                                 }
                             }
                         }
+                    }
+
+                    if(!deviceFound){
+                        isLoading = false
+                        errorMessage = "Device not saved for a profile."
                     }
 
 
