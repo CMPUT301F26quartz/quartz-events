@@ -20,6 +20,7 @@ import android.icu.text.DateFormat
 @Composable
 fun MessageCenter(profile: UserProfile, onBack: () -> Unit, onAddCampsite: () -> Unit) {
     var sent by rememberSaveable(profile.uid) { mutableStateOf(false) }
+    var notificationsOnly by rememberSaveable(profile.uid) { mutableStateOf(false) }
     var composing by rememberSaveable(profile.uid) { mutableStateOf(false) }
     var replyId by rememberSaveable(profile.uid) { mutableStateOf<String?>(null) }
     var receipt by rememberSaveable(profile.uid) { mutableStateOf("") }
@@ -27,6 +28,7 @@ fun MessageCenter(profile: UserProfile, onBack: () -> Unit, onAddCampsite: () ->
         ComposeMail(profile.uid, profile.role == "owner", replyId, onAddCampsite, onBack = { composing = false }, onSent = { count ->
             composing = false
             sent = true
+            notificationsOnly = false
             receipt = "Sent to " + count + if (count == 1) " recipient." else " recipients."
         })
         return
@@ -35,7 +37,10 @@ fun MessageCenter(profile: UserProfile, onBack: () -> Unit, onAddCampsite: () ->
     var expanded by rememberSaveable(profile.uid) { mutableStateOf<String?>(null) }
     val repo = remember(profile.uid, sent, retry) { MessageRepo.mailboxFor(profile.uid, sent) }
     DisposableEffect(repo) { onDispose { repo.stopListening() } }
-    val notices = repo.getAllMessages().sortedByDescending { it.sentAt }
+    val ownerSent = sent && profile.role == "owner"
+    val showNotificationsOnly = ownerSent && notificationsOnly
+    val messages = if (showNotificationsOnly) repo.getAllNotifications() else repo.getAllMessages()
+    val notices = messages.sortedByDescending { it.sentAt }
     // A broadcast is stored once per recipient. Show one card for it in Sent.
     val groups = notices.groupBy {
         if (sent && it.broadcastId.isNotBlank()) "broadcast/" + it.broadcastId else "message/" + it.documentId
@@ -53,6 +58,10 @@ fun MessageCenter(profile: UserProfile, onBack: () -> Unit, onAddCampsite: () ->
             FilterChip(!sent, onClick = { sent = false; receipt = "" }, label = { Text("Inbox") })
             FilterChip(sent, onClick = { sent = true }, label = { Text("Sent") })
         }
+        if (ownerSent) {
+            FilterChip(notificationsOnly, onClick = { notificationsOnly = !notificationsOnly },
+                label = { Text("Notifications only") })
+        }
         if (receipt.isNotBlank()) Text(receipt)
         Spacer(Modifier.height(8.dp))
         when {
@@ -61,7 +70,7 @@ fun MessageCenter(profile: UserProfile, onBack: () -> Unit, onAddCampsite: () ->
                 Text("Could not load messages.")
                 TextButton(onClick = { retry++ }) { Text("Retry") }
             }
-            groups.isEmpty() -> Text("No messages yet.")
+            groups.isEmpty() -> Text(if (showNotificationsOnly) "No sent notifications yet." else "No messages yet.")
             else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(groups.entries.toList(), key = { it.key }) { (key, deliveries) ->
                     val notice = deliveries.first()
