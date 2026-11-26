@@ -23,7 +23,7 @@ data class Campsite(
     val location: String = "",
     val description: String = "",
     val maxOccupancy: String = "",
-    val imageUrl: String = "",
+    val imageUrl: String? = null,
     val tags: String = "",
 ){
     var reservations: MutableList<Reservation> = mutableListOf()

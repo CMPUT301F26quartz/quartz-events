@@ -1,5 +1,6 @@
 package com.example.quartzevents.OwnerFunctions
 
+import android.R.attr.description
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,8 +19,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 import com.example.quartzevents.Classes.Campsite
+import com.google.firebase.firestore.FirebaseFirestore
+import com.example.quartzevents.uploadToImgBB
 
 
 private val QuartzGreen = Color(0xFF254D3C)
@@ -39,10 +51,12 @@ private val QuartzCream = Color(0xFFF7F5ED)
 @Composable
 fun RegisterCampsite(
     onBack: () -> Unit,
-    onSaveSuccess: () -> Unit
+    onSaveSuccess: () -> Unit,
+    campsiteToEdit: Campsite? = null
 
 ) {
     var campsiteName by remember { mutableStateOf("") }
+
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var maxOccupancy by remember { mutableStateOf("") }
@@ -53,6 +67,27 @@ fun RegisterCampsite(
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(campsiteToEdit) {
+        campsiteToEdit?.let { existingCampsite ->
+            campsiteName = existingCampsite.name
+            location = existingCampsite.location
+            description = existingCampsite.description
+            maxOccupancy = existingCampsite.maxOccupancy
+            tags = existingCampsite.tags
+        }
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) selectedImageUri = uri
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -215,6 +250,30 @@ fun RegisterCampsite(
                         )
                     )
                 }
+
+                Button(
+                    onClick = {
+                        pickImageLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                ) {
+                    Text("Select Optional Image")
+                }
+
+                selectedImageUri?.let { uri ->
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = "Selected Image Preview",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                    )
+                }
+
+
+
             }
         }
 
@@ -229,21 +288,30 @@ fun RegisterCampsite(
                 } else {
                     isLoading = true
 
-                    val newCampsite = Campsite(
-                        ownerId = currentUserId,
-                        name = campsiteName.trim(),
-                        location = location.trim(),
-                        description = description.trim(),
-                        maxOccupancy = maxOccupancy.trim(),
-                        tags = tags.trim()
-                    )
+                    scope.launch {
+                        var uploadedUrl = campsiteToEdit?.imageUrl
+                        if (selectedImageUri != null) {
+                            uploadedUrl = uploadToImgBB(context, selectedImageUri!!)
+                        }
 
-                    repository.saveCampsite(newCampsite) { success, error ->
-                        isLoading = false
-                        if (success) {
-                            onSaveSuccess()
-                        } else {
-                            errorMessage = error ?: "Failed to save campsite."
+                        val newCampsite = Campsite(
+                            id = campsiteToEdit?.id ?: "",
+                            ownerId = currentUserId,
+                            name = campsiteName.trim(),
+                            location = location.trim(),
+                            description = description.trim(),
+                            maxOccupancy = maxOccupancy.trim(),
+                            tags = tags.trim(),
+                            imageUrl = uploadedUrl
+                        )
+
+                        repository.saveCampsite(newCampsite) { success, error ->
+                            isLoading = false
+                            if (success) {
+                                onSaveSuccess()
+                            } else {
+                                errorMessage = error ?: "Failed to save campsite."
+                            }
                         }
                     }
                 }
