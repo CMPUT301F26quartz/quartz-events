@@ -3,11 +3,15 @@ package com.example.quartzevents.Repositories
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.quartzevents.Classes.Campsite
+import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
+import com.example.quartzevents.Classes.User
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
@@ -41,6 +45,7 @@ class LotteryRepository {
 
         errorMessage = null
         _lotteries.clear()
+
         snapshot?.documents?.forEach { document ->
             _lotteries.add(document.toObject(Lottery::class.java)!!)
         }
@@ -105,8 +110,11 @@ class LotteryRepository {
     }
 
     private fun saveLottery(id: String, lottery: Lottery) {
-        lottery.messagingCampsiteIds = lottery.campsites.map { it.id }.filter { it.isNotBlank() }.distinct()
-        lotteryRef.document(id).set(lottery)
+        //lottery.messagingCampsiteIds = lottery.campsites.map { it.id }.filter { it.isNotBlank() }.distinct()
+        lottery.messagingCampsiteIds = lottery.campsites
+        lotteryRef.document(id).set(lottery).apply {
+
+        }
     }
 
     /**
@@ -117,7 +125,7 @@ class LotteryRepository {
      */
     fun addEntrant(lottery: Lottery, entrant: Entrant) {
         val ents = lottery.entrants
-        ents.add(entrant)
+        ents.add(entrant.uid)
 
         updateLottery(
             Lottery(
@@ -145,7 +153,7 @@ class LotteryRepository {
      */
     fun deleteEntrant(lottery: Lottery, entrant: Entrant) {
         val ents = lottery.entrants
-        ents.remove(entrant)
+        ents.remove(entrant.uid)
 
         updateLottery(
             Lottery(

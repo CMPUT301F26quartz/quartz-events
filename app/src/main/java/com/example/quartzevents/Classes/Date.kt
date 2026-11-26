@@ -8,6 +8,7 @@
 
 package com.example.quartzevents.Classes
 
+import com.google.firebase.firestore.Exclude
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 

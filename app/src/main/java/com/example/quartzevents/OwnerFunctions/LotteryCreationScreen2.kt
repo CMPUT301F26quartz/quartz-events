@@ -80,7 +80,7 @@ fun LotteryCreationScreen2(
     var nameInput by remember { mutableStateOf("") }
     var capacityInput by remember { mutableIntStateOf(0) }
     var entrantsInput: MutableList<Entrant> = mutableListOf()
-    var winnersInput: MutableList<Entrant> = mutableListOf()
+    var winnersInput: MutableList<String> = mutableListOf()
     var winNumInput by remember {mutableIntStateOf(0)}
     val dateFormat =
         Regex("""^(\d{4})-(0[1-9]|1[0-2]|[1-9])-([1-9]|0[1-9]|[1-2]\d|3[0-1])$""") // for checking if entered date is in the correct format: from https://regex101.com/library/oE3yO7 and https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.text/-regex/
@@ -404,10 +404,4 @@ fun LotteryCreationScreen2(
         }
     }
     BackHandler (onBack = onBack)
-//    if (backB) {
-//        LotteryCreationScreen1(
-//            lotteries,
-//            campsites,
-//            { campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners -> Unit })
-//    }
 }

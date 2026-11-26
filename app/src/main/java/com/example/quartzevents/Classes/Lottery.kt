@@ -1,31 +1,36 @@
 package com.example.quartzevents.Classes
 
 import com.example.quartzevents.Classes.Campsite
+import com.google.firebase.firestore.Exclude
 import kotlin.random.Random
 
+
+/**
+ *
+ */
 class Lottery(
-    val campsites: MutableList<Campsite> = mutableListOf(),
+    var campsites: MutableList<String> = mutableListOf(),
     val name: String ="",
-    var registrationStart: Date = Date(""),
-    var registrationEnd: Date = Date(""),
-    var bookingStart: Date = Date(""),
-    var bookingEnd: Date = Date(""),
+    var registrationStart: String = "",
+    var registrationEnd: String = "",
+    var bookingStart: String = "",
+    var bookingEnd: String = "",
     var capacity:Int?=null,
     val id: String?=null,
     val creatorId: String?=null,
-    val entrants: MutableList<Entrant> = mutableListOf(),
+    var entrants: MutableList<String> = mutableListOf(),
     var winNum: Int?=null,
-    val winners: MutableList<Entrant> = mutableListOf()
+    var winners: MutableList<String> = mutableListOf()
 ) {
     var messagingCampsiteIds: List<String> = emptyList()
 
 
     fun add_contestant(contestant: Entrant) {
-        entrants.add(contestant)
+        entrants.add(contestant.uid)
     }
 
     fun remove_contestant(contestant: Entrant) {
-        entrants.remove(contestant)
+        entrants.remove(contestant.uid)
     }
 
     fun clear_contestant_list() {
@@ -42,7 +47,7 @@ class Lottery(
         }
     }
 
-    private fun sendWinNotif(winner: Entrant, ownerId: String) {
-        val notif = Notification(ownerId,winner.uid,"")
+    private fun sendWinNotif(winnerId: String, ownerId: String) {
+        val notif = Notification(ownerId,winnerId,"")
     }
 }
