@@ -120,8 +120,8 @@ fun AdminDashboardScreen(onLogout: () -> Unit){
             //Box Buttons
             Spacer(modifier = Modifier.height(10.dp))
             Column(
-                modifier = Modifier.fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth(),
+//                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 

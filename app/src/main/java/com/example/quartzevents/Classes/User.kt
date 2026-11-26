@@ -14,7 +14,10 @@ package com.example.quartzevents.Classes
 
 abstract class User(
     var email: String = "",
+    var password: String = "",
     var name: String = "",
     var role: String = "",
-    var uid: String = ""
+    var uid: String = "",
+    var deviceLogin: Boolean,
+    var deviceId: List<String>
 ){}

@@ -4,6 +4,7 @@ package com.example.quartzevents.auth
  * Provides the login and registration screens for entrants and campsite owners.
  * Handles user input, form validation, and authentication through AuthRepository.
  */
+import android.util.Patterns
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +23,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import com.example.quartzevents.Repositories.AuthRepository
+import com.example.quartzevents.Repositories.UserRepoMain
 
 private val QuartzGreen = Color(0xFF254D3C)
 private val QuartzDarkGreen = Color(0xFF244D3D)
@@ -62,7 +66,7 @@ private fun QuartzTextField(
             visualTransformation = if (isPassword) {
                 PasswordVisualTransformation()
             } else {
-                androidx.compose.ui.text.input.VisualTransformation.None
+                VisualTransformation.None
             },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = QuartzFieldGray,
@@ -92,10 +96,11 @@ fun AuthScreen(
     var selectedRole by remember { mutableStateOf("entrant")}
     var isLoading by remember { mutableStateOf(false)}
     var errorMessage by remember { mutableStateOf<String?>(null)}
+
     val isSignUpValid = firstName.isNotBlank() &&
             lastName.isNotBlank() &&
             username.isNotBlank() &&
-            android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() &&
+            Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() &&
             phoneNumber.isNotBlank() &&
             password.length >= 6 &&
             agreedToPolicies
@@ -364,14 +369,65 @@ fun AuthScreen(
         }
         Spacer(modifier = Modifier.height(12.dp))
 
-        //sign in using device
-//        if(!isSignUp){
-//            Button(
-//                onClick= {
-//                    loginByDevice()
-//                }//end onClick
-//            ){}
-//        }
+//        sign in using device
+        if(!isSignUp){
+            val context = LocalContext.current
+            val deviceId = getDeviceId(context)
+            val userRepository = remember{ UserRepoMain() }
+            var users = userRepository.getAllUsers()
+            Button(
+                onClick= {
+                    for(user in users){
+                        if(user.deviceLogin){
+                            for(id in user.deviceId){
+                                if(deviceId == id){
+                                    repository.login(deviceId = deviceId){ success, error ->
+                                        if (success) {
+                                            val uid = repository.getCurrentUserId()
+                                            if (uid != null) {
+                                                repository.getUserProfile(uid) { profile, profileError ->
+                                                    isLoading = false
+                                                    if (profile != null) {
+                                                        onAuthenticated(profile)
+                                                    } else {
+                                                        errorMessage = profileError
+                                                            ?: "Could not load user profile."
+                                                    }
+                                                }
+                                            } else {
+                                                isLoading = false
+                                                errorMessage = "Could not get user ID."
+                                            }
+                                        } else {
+                                            isLoading = false
+                                            errorMessage = error ?: "Login failed."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+                         },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(52.dp)
+                    .testTag("deviceSignInButton"),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = QuartzGreen,
+                    contentColor = QuartzWhite,
+                    disabledContainerColor = QuartzGray,
+                    disabledContentColor = QuartzWhite
+                )
+            ){
+                  Text(
+                      text = "Sign In Using Device"
+                  )
+                }
+        }
 
         TextButton(
             onClick = {
@@ -386,14 +442,70 @@ fun AuthScreen(
             Text(
                 if (isSignUp) "Already have an account? Log In"
                 else "Don't have an account? Sign Up",
-                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                textDecoration = TextDecoration.Underline
             )
         }
     }
 }
 
-@Composable
-fun loginByDevice(){
-    val context = LocalContext.current
-    val deviceId = getDeviceId(context)
-}
+//@Composable
+//fun LoginByDevice(repository: AuthRepository, isLoading: Boolean, onAuthenticated:){
+//    val context = LocalContext.current
+//    val deviceId = getDeviceId(context)
+//    val userRepository = remember{ UserRepoMain() }
+//    var users = userRepository.getAllUsers()
+//
+//    for(user in users){
+//        if(user.deviceLogin){
+//            for(id in user.deviceId){
+//                if(deviceId == id){
+//                    repository.login(deviceId = deviceId){ success, error ->
+//                        if (success) {
+//                            val uid = repository.getCurrentUserId()
+//                            if (uid != null) {
+//                                repository.getUserProfile(uid) { profile, profileError ->
+//                                    isLoading = false
+//                                    if (profile != null) {
+//                                        onAuthenticated(profile)
+//                                    } else {
+//                                        errorMessage = profileError
+//                                            ?: "Could not load user profile."
+//                                    }
+//                                }
+//                            } else {
+//                                isLoading = false
+//                                errorMessage = "Could not get user ID."
+//                            }
+//                        } else {
+//                            isLoading = false
+//                            errorMessage = error ?: "Login failed."
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+
+//fun loginGo(success: Boolean, repository: AuthRepository, ){
+//    if (success) {
+//        val uid = repository.getCurrentUserId()
+//        if (uid != null) {
+//            repository.getUserProfile(uid) { profile, profileError ->
+//                isLoading = false
+//                if (profile != null) {
+//                    onAuthenticated(profile)
+//                } else {
+//                    errorMessage = profileError
+//                        ?: "Could not load user profile."
+//                }
+//            }
+//        } else {
+//            isLoading = false
+//            errorMessage = "Could not get user ID."
+//        }
+//    } else {
+//        isLoading = false
+//        errorMessage = error ?: "Login failed."
+//    }
+//}
