@@ -1,4 +1,9 @@
 package com.example.quartzevents.Classes
 
-class DirectMessage(sender: User, receiver: User, message: String): Message(sender, receiver, message) {
+class DirectMessage(
+    senderId: String = "",
+    receiverId: String = "",
+    message: String = ""
+): Message(type = "direct", senderId, receiverId, message){
+
 }

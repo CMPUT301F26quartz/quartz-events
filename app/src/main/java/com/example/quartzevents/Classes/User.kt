@@ -16,5 +16,7 @@ abstract class User(
     var email: String = "",
     var name: String = "",
     var role: String = "",
-    var uid: String = ""
+    var uid: String = "",
+    var deviceLogin: Boolean = false,
+    var deviceId: List<String> = emptyList()
 ){}

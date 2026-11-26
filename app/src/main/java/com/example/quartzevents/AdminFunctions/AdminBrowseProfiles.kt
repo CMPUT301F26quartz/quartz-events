@@ -97,8 +97,6 @@ fun AdminBrowseProfilesScreen(back: () -> Unit){
         )
         Spacer(modifier = Modifier.height(10.dp))
 
-
-        //for preview purposes
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally

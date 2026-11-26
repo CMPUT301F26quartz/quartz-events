@@ -4,6 +4,8 @@ package com.example.quartzevents.auth
  * Provides the login and registration screens for entrants and campsite owners.
  * Handles user input, form validation, and authentication through AuthRepository.
  */
+import android.util.Patterns
+import android.widget.CheckBox
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,9 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import com.example.quartzevents.Repositories.AuthRepository
+import com.example.quartzevents.Repositories.UserRepoMain
 
 private val QuartzGreen = Color(0xFF254D3C)
 private val QuartzDarkGreen = Color(0xFF244D3D)
@@ -61,7 +67,7 @@ private fun QuartzTextField(
             visualTransformation = if (isPassword) {
                 PasswordVisualTransformation()
             } else {
-                androidx.compose.ui.text.input.VisualTransformation.None
+                VisualTransformation.None
             },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = QuartzFieldGray,
@@ -79,6 +85,7 @@ fun AuthScreen(
     onAuthenticated: (UserProfile) -> Unit
 ) {
     val repository = remember { AuthRepository() }
+    val userRepo = remember { UserRepoMain() }
 
     var isSignUp by remember { mutableStateOf(false) }
     var firstName by remember { mutableStateOf("") }
@@ -91,10 +98,17 @@ fun AuthScreen(
     var selectedRole by remember { mutableStateOf("entrant")}
     var isLoading by remember { mutableStateOf(false)}
     var errorMessage by remember { mutableStateOf<String?>(null)}
+    var saveDevice by remember{mutableStateOf(false)}
+
+
+    val context = LocalContext.current
+    val deviceId = getDeviceId(context)
+    println("******************* DeviceId = $deviceId **********************")
+
     val isSignUpValid = firstName.isNotBlank() &&
             lastName.isNotBlank() &&
             username.isNotBlank() &&
-            android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() &&
+            Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() &&
             phoneNumber.isNotBlank() &&
             password.length >= 6 &&
             agreedToPolicies
@@ -252,6 +266,19 @@ fun AuthScreen(
                 Text("Owner")
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = saveDevice,
+                onCheckedChange = {saveDevice = it}
+            )
+            Spacer(modifier = Modifier.width(1.dp))
+            Text(
+                text = "Remember me by this device."
+            )
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
         if(errorMessage != null) {
             Text(
@@ -260,6 +287,7 @@ fun AuthScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
+
 
         Button(
             onClick = {
@@ -321,7 +349,13 @@ fun AuthScreen(
                                     repository.getUserProfile(uid) { profile, profileError ->
                                         isLoading = false
                                         if (profile != null) {
+
+                                            if(saveDevice){
+                                                userRepo.addDevice(uid, deviceId)
+                                            }
+
                                             onAuthenticated(profile)
+
                                         } else {
                                             errorMessage = profileError
                                                 ?: "Could not load user profile."
@@ -363,6 +397,76 @@ fun AuthScreen(
         }
         Spacer(modifier = Modifier.height(12.dp))
 
+//        sign in using device
+        if(!isSignUp){
+            var users = userRepo.getAllUsers()
+            var deviceFound = false
+            Button(
+                onClick= {
+                    //TODO: change permissions in firebase, test, get rid of all the println's
+                    println("############ Device button clicked ################")
+                    println("################## Num of users is ${users.size} ##############")
+                    for(user in users){
+                        if(user.deviceLogin){
+                            println("################# deviceLogin is true #################")
+                            for(id in user.deviceId){
+                                println("################################# id is: $id ###############")
+                                if(deviceId == id){
+                                    println("################# deviceId Matches #################")
+                                    deviceFound = true
+                                    repository.login(deviceId = deviceId){ success, error ->
+                                        if (success) {
+                                            val uid = repository.getCurrentUserId()
+                                            if (uid != null) {
+                                                repository.getUserProfile(uid) { profile, profileError ->
+                                                    isLoading = false
+                                                    if (profile != null) {
+                                                        onAuthenticated(profile)
+                                                    } else {
+                                                        errorMessage = profileError
+                                                            ?: "Could not load user profile."
+                                                    }
+                                                }
+                                            } else {
+                                                isLoading = false
+                                                errorMessage = "Could not get user ID."
+                                            }
+                                        } else {
+                                            isLoading = false
+                                            errorMessage = error ?: "Login failed."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if(!deviceFound){
+                        isLoading = false
+                        errorMessage = "Device not saved for a profile."
+                    }
+
+
+                         },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(52.dp)
+                    .testTag("deviceSignInButton"),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = QuartzGreen,
+                    contentColor = QuartzWhite,
+                    disabledContainerColor = QuartzGray,
+                    disabledContentColor = QuartzWhite
+                )
+            ){
+                  Text(
+                      text = "Sign In Using Device"
+                  )
+                }
+        }
+
         TextButton(
             onClick = {
                 isSignUp = !isSignUp
@@ -376,8 +480,70 @@ fun AuthScreen(
             Text(
                 if (isSignUp) "Already have an account? Log In"
                 else "Don't have an account? Sign Up",
-                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                textDecoration = TextDecoration.Underline
             )
         }
     }
 }
+
+//@Composable
+//fun LoginByDevice(repository: AuthRepository, isLoading: Boolean, onAuthenticated:){
+//    val context = LocalContext.current
+//    val deviceId = getDeviceId(context)
+//    val userRepository = remember{ UserRepoMain() }
+//    var users = userRepository.getAllUsers()
+//
+//    for(user in users){
+//        if(user.deviceLogin){
+//            for(id in user.deviceId){
+//                if(deviceId == id){
+//                    repository.login(deviceId = deviceId){ success, error ->
+//                        if (success) {
+//                            val uid = repository.getCurrentUserId()
+//                            if (uid != null) {
+//                                repository.getUserProfile(uid) { profile, profileError ->
+//                                    isLoading = false
+//                                    if (profile != null) {
+//                                        onAuthenticated(profile)
+//                                    } else {
+//                                        errorMessage = profileError
+//                                            ?: "Could not load user profile."
+//                                    }
+//                                }
+//                            } else {
+//                                isLoading = false
+//                                errorMessage = "Could not get user ID."
+//                            }
+//                        } else {
+//                            isLoading = false
+//                            errorMessage = error ?: "Login failed."
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+
+//fun loginGo(success: Boolean, repository: AuthRepository, ){
+//    if (success) {
+//        val uid = repository.getCurrentUserId()
+//        if (uid != null) {
+//            repository.getUserProfile(uid) { profile, profileError ->
+//                isLoading = false
+//                if (profile != null) {
+//                    onAuthenticated(profile)
+//                } else {
+//                    errorMessage = profileError
+//                        ?: "Could not load user profile."
+//                }
+//            }
+//        } else {
+//            isLoading = false
+//            errorMessage = "Could not get user ID."
+//        }
+//    } else {
+//        isLoading = false
+//        errorMessage = error ?: "Login failed."
+//    }
+//}

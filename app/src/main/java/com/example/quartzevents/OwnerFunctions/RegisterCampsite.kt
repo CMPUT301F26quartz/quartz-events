@@ -1,6 +1,5 @@
 package com.example.quartzevents.OwnerFunctions
 
-import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,8 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 
-import com.example.quartzevents.Campsite
-import com.example.quartzevents.OwnerFunctions.CampsiteRepository
+import com.example.quartzevents.Classes.Campsite
 
 
 private val QuartzGreen = Color(0xFF254D3C)
