@@ -1,18 +1,13 @@
 package com.example.quartzevents.Repositories
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.example.quartzevents.Classes.Campsite
-import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
-import com.example.quartzevents.Classes.User
 import com.google.firebase.Firebase
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
 
@@ -98,6 +93,8 @@ class LotteryRepository {
      */
     fun deleteLottery(lottery: Lottery) {
         lotteryRef.document(lottery.id.toString()).delete()
+            .addOnSuccessListener { Log.d("LotteryDeletion","Lottery Deleted Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryDeletion","Failure to Delete Lottery", error) }
     }
 
     /**
@@ -105,16 +102,20 @@ class LotteryRepository {
      *
      * @property lottery a Lottery object to be used to update the document
      */
-    fun updateLottery(lottery: Lottery){
-        saveLottery(lottery.id.toString(), lottery)
+    fun updateLottery(fields: MutableMap<String,Any>,lotteryId: String){
+        lotteryRef.document(lotteryId).update(fields)
+            .addOnSuccessListener { Log.d("LotteryUpdate","Lottery Updated Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryUpdate","Failure to Update Lottery",error) }
+
     }
 
     private fun saveLottery(id: String, lottery: Lottery) {
-        //lottery.messagingCampsiteIds = lottery.campsites.map { it.id }.filter { it.isNotBlank() }.distinct()
-        lottery.messagingCampsiteIds = lottery.campsites
-        lotteryRef.document(id).set(lottery).apply {
-
-        }
+        lotteryRef.document(id).set(lottery)
+            .addOnSuccessListener { Log.d("LotteryCreation","Lottery Created Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryCreation","Failure to Create Lottery", error) }
+        lotteryRef.document(id).update("id",id)
+            .addOnSuccessListener { Log.d("LotteryCreation","Lottery Id Inserted Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryCreation","Failure to insert Lottery Id", error) }
     }
 
     /**
@@ -126,23 +127,7 @@ class LotteryRepository {
     fun addEntrant(lottery: Lottery, entrant: Entrant) {
         val ents = lottery.entrants
         ents.add(entrant.uid)
-
-        updateLottery(
-            Lottery(
-                lottery.campsites,
-                lottery.name,
-                lottery.registrationStart,
-                lottery.registrationEnd,
-                lottery.bookingStart,
-                lottery.bookingEnd,
-                lottery.capacity,
-                lottery.id,
-                lottery.creatorId,
-                ents,
-                lottery.winNum,
-                lottery.winners
-            )
-        )
+        updateLottery(mutableMapOf<String,Any>("entrants" to ents),lottery.id!!)
     }
 
     /**
@@ -154,22 +139,6 @@ class LotteryRepository {
     fun deleteEntrant(lottery: Lottery, entrant: Entrant) {
         val ents = lottery.entrants
         ents.remove(entrant.uid)
-
-        updateLottery(
-            Lottery(
-                lottery.campsites,
-                lottery.name,
-                lottery.registrationStart,
-                lottery.registrationEnd,
-                lottery.bookingStart,
-                lottery.bookingEnd,
-                lottery.capacity,
-                lottery.id,
-                lottery.creatorId,
-                ents,
-                lottery.winNum,
-                lottery.winners
-            )
-        )
+        updateLottery(mutableMapOf<String,Any>("entrants" to ents),lottery.id!!)
     }
 }

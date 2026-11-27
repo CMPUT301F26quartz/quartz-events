@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,7 +43,13 @@ import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.LotteryRepository
 import com.example.quartzevents.model.UserProfile
 
-
+// Accessed ChatGPT to determine why selectedSites was building wrong.
+// Particularly why it was not containing the site Ids it was supposed to
+// It suggested basing the checked status of the checkboxes on whether or
+// not the siteId was present in selectedSites, as well as ensuring
+// selectedSites was populated from the ids already in the lottery's campsite
+// list, and provided the following code in order to fix it:
+// Accessed 2026/11/26
 @Composable
 fun LotteryUpdateScreen1(
     profile: UserProfile,
@@ -120,7 +127,7 @@ fun LotteryUpdateScreen1(
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
                 LazyColumn( // List of available Lottery displays
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
                     itemsIndexed(ownerSites) { index, site ->
                         SiteUpdateNameListing( // call composable function that builds each lottery display
@@ -131,42 +138,6 @@ fun LotteryUpdateScreen1(
                             onRemoveSite = { selectedSites = it }
                         )
                         if (index < ownerSites.lastIndex) {
-                            HorizontalDivider()
-                        }
-                    }
-                }
-
-                var nonOwnerSites = mutableListOf<Campsite>()
-                for (site in campsites) {
-                    if (site !in ownerSites) {
-                        nonOwnerSites.add(site)
-                    }
-                }
-
-
-                Spacer(modifier = Modifier.padding(top = 20.dp))
-
-                Text(
-                    "Other Campsites:",
-                    fontSize = 27.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.padding(top = 20.dp))
-
-                LazyColumn( // List of available Lottery displays
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    itemsIndexed(nonOwnerSites) { index, site ->
-                        SiteUpdateNameListing( // call composable function that builds each lottery display
-                            selectedSites,
-                            lottery = lottery,
-                            site = site,
-                            onAddSite = { selectedSites = it },
-                            onRemoveSite = { selectedSites = it }
-                        )
-                        if (index < nonOwnerSites.lastIndex) {
                             HorizontalDivider()
                         }
                     }
@@ -206,10 +177,14 @@ fun SiteUpdateNameListing(
     onRemoveSite: (String) -> Unit
 ) {
     val siteId = site.id
-    var isChecked by remember { mutableStateOf(false) }
-    if (siteId in lottery!!.campsites) {
-        isChecked = true
-    }
+
+    // Parse the current selected campsite IDs
+    val selectedIds = siteIds.split(" ")
+        .filter { it.isNotBlank() }
+
+    // A campsite is checked if it is selected
+    val isChecked = siteId in selectedIds
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -219,24 +194,26 @@ fun SiteUpdateNameListing(
     ) {
         Checkbox(
             checked = isChecked,
-            onCheckedChange = {
-                isChecked = it
-                if (isChecked) {
-                    val sites = siteIds + " " + siteId
-                    onAddSite(sites)
-                } else if (!isChecked) {
-                    var sites = ""
-                    val ids = siteIds.split(" ")
-                    sites += ids[0]
-                    for (id in (1..ids.size)) {
-                        if (ids[id] != siteId) {
-                            sites += " " + ids[id]
-                        }
-                    }
-                    onRemoveSite(siteId)
+            onCheckedChange = { checked ->
+
+                val updatedIds = if (checked) {
+                    selectedIds + siteId
+                } else {
+                    selectedIds.filter { it != siteId }
                 }
-            },
+
+                val updatedSites = updatedIds
+                    .distinct()
+                    .joinToString(" ")
+
+                if (checked) {
+                    onAddSite(updatedSites)
+                } else {
+                    onRemoveSite(updatedSites)
+                }
+            }
         )
+
         Box(
             modifier = Modifier
                 .size(300.dp, 80.dp)

@@ -51,31 +51,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Campsite
-import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
 import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.LotteryRepository
 import com.example.quartzevents.model.UserProfile
 
-/**
- * The main UI body, contains all UI elements, including the list of CampsiteListing objects
- *
- * Each Campsite Display includes the name of the campsite and the registration
- *  * start and end dates for the lottery it is a part of. These displays are contained
- *  * inside a lazy column for ease of display in the UI. There are three buttons at the
- *  * of the screen. The "create new lottery" button calls the LotteryCreationScreen1() function
- *  * from LotteryCreationScreen1.kt, and is the first step in the lottery creation/registration
- *  * process. The "Edit" button calls the LotteryUpdateScreen1() function
- *  * from LotteryUpdateScreen1.kt, and is the first step in the lottery update process.
- *  * The "delete" button does not yet have functionality, but will lead to the deletion of the
- *  * lottery associated with the campsite selected.
- *
- *  @property lotteries a list of Lottery objects.
- *  @property campsites a mutable list of Campsite objects
- *  @property onAddLottery a lambda function to be passed to another function
- *  @property onUpdateLottery a lambda function to be passed to another function
- */
 @Composable
 fun OwnerLotteryHomeScreen(
     profile: UserProfile,
@@ -89,7 +70,6 @@ fun OwnerLotteryHomeScreen(
     var campsites: MutableList<Campsite>
     val lotRepo = remember { LotteryRepository() }
     val lotteries = lotRepo.getAllLotteries()
-    var updateScreen by remember {mutableStateOf(false)}
     var campInfo: MutableList<MutableMap<Pair<String,String>,MutableList<String>>> = mutableListOf<MutableMap<Pair<String,String>,MutableList<String>>>()
     var selectedLot by remember {mutableStateOf(Lottery())}
 
@@ -132,7 +112,7 @@ fun OwnerLotteryHomeScreen(
                 modifier = Modifier.fillMaxHeight().padding(top = 25.dp, start = 25.dp),
             ) {
                 Text(
-                    "Campsites in a Lottery",
+                    "Lotteries and Campsites",
                     fontSize = 25.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -148,7 +128,7 @@ fun OwnerLotteryHomeScreen(
                                 campsites.add(item)
                         }
                     }
-                    for (site in campsites) {
+                    for (site in campsites) { // Building list for use in later composable
                         campInfo.add(
                             mutableMapOf(
                                 Pair(site.name, lottery.name) to mutableListOf(
@@ -244,23 +224,6 @@ fun OwnerLotteryHomeScreen(
 }
 
 
-/**
- * Reusable Composable object that creates a display of a campsite name and the registration dates of it's
- * associated lottery.
- *
- * Only one checkbox can be selected at one time to ensure the correct lottery is passed to the update function in
- * the LotteryListCampsiteSelectScreen() function. Otherwise, just holds text.
- *
- * @property siteInfo a map with the campsite name as the key, and a mutable list containing the registration
- * dates as its value.
- * @property onAddSite a lambda function that adds the selected campsite to the selectedSite variable by passing
- * it back to LotteryListCampsiteSelectScreen()
- * @property onRemoveSite a lambda function that removes the selected campsite from the selectedSite variable by passing
- * it back to LotteryListCampsiteSelectScreen()
- * @property selectedSite a Campsite object to be used in determining the lottery to be passed to
- * LotteryUpdateScreen1()
- * @property sites a mutable list of Campsite objects
- */
 @Composable
 fun CampsiteListing (
     siteInfo: MutableMap<Pair<String,String>,MutableList<String>>,

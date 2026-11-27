@@ -184,6 +184,7 @@ fun SiteNameListing (
 ) {
     val siteId = site.id
     var isChecked by remember {mutableStateOf(false)}
+    var sites = ""
     Row (
         modifier = Modifier
             .fillMaxWidth()
@@ -196,17 +197,23 @@ fun SiteNameListing (
             onCheckedChange = {
                 isChecked = it
                 if(isChecked) {
-                    val sites = siteIds + " " + siteId
-                    onAddSite(sites)
-                } else if(!isChecked){
-                    var sites = ""
-                    val ids = siteIds.split(" ")
-                    sites += ids[0]
-                    for (id in (1..ids.size)) {
-                        if (ids[id] != siteId) {
-                           sites += " " + ids[id]
-                        }
+                    if( siteIds == "") {
+                        sites = siteId
+                    } else {
+                        sites = siteIds + " " + siteId
                     }
+                    onAddSite(sites)
+                    // Asked ChatGPT to help fix the following code for removing
+                    // a site if the checkbox is unchecked since the previous
+                    // code was throwing an index out of bounds exception.
+                    // it gave me the following code
+                    // Date Accessed: 2026/11/26
+                } else {
+                    val ids = siteIds.split(" ")
+                        .filter { it.isNotBlank() && it != siteId }
+
+                    val sites = ids.joinToString(" ")
+
                     onRemoveSite(sites)
                 }
                               },

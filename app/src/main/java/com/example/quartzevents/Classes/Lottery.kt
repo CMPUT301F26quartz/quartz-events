@@ -1,7 +1,5 @@
 package com.example.quartzevents.Classes
 
-import com.example.quartzevents.Classes.Campsite
-import com.google.firebase.firestore.Exclude
 import kotlin.random.Random
 
 
@@ -15,14 +13,13 @@ class Lottery(
     var registrationEnd: String = "",
     var bookingStart: String = "",
     var bookingEnd: String = "",
-    var capacity:Int?=null,
-    val id: String?=null,
-    val creatorId: String?=null,
+    var capacity: Int? =null,
+    val id: String? =null,
+    val creatorId: String? =null,
     var entrants: MutableList<String> = mutableListOf(),
-    var winNum: Int?=null,
+    var winNum: Int? =null,
     var winners: MutableList<String> = mutableListOf()
 ) {
-    var messagingCampsiteIds: List<String> = emptyList()
 
 
     fun add_contestant(contestant: Entrant) {
@@ -42,12 +39,13 @@ class Lottery(
             val num = Random.nextInt(0, entrants.size)
             winners.add(entrants[num])
         }
-        winners.forEach{ item ->
-            sendWinNotif(item,ownerId)
-        }
     }
 
-    private fun sendWinNotif(winnerId: String, ownerId: String) {
-        val notif = Notification(ownerId,winnerId,"")
+    fun sendWinNotif(winnerId: String, ownerId: String): Notification {
+        return Notification(ownerId,winnerId,"Congrats! You won the $name lottery!")
+    }
+
+    fun sendLoseNotif(loserId: String, ownerId: String): Notification {
+        return Notification(ownerId,loserId,"Unfortunately, you did not win the $name lottery. Better Luck next time.")
     }
 }
