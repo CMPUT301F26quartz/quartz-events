@@ -23,6 +23,9 @@ class Lottery(
 ) {
 
 
+    @com.google.firebase.firestore.Exclude
+    fun isWaitlistFull(): Boolean = capacity?.let { it > 0 && entrants.size >= it } == true
+
     fun add_contestant(contestant: Entrant) {
         entrants.add(contestant.uid)
     }

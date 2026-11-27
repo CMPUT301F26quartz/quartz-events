@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.model.UserProfile
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
 
 private val darkGreen = Color(0xFF244D3D)
@@ -38,11 +40,15 @@ private enum class SearchPage { SEARCH, FILTERS, RESULTS }
  * @param onBack Returns to the entrant home page.
  */
 @Composable
+fun EntrantSearchScreen(profile: UserProfile, onBack: () -> Unit) =
+    EntrantSearchScreen(profile.uid, onBack)
+
+@Composable
 fun EntrantSearchScreen(entrantId: String? = null, onBack: () -> Unit) {
     var searchText by remember { mutableStateOf("") }
     var filters by remember { mutableStateOf(CampsiteFilters()) }
     var page by remember { mutableStateOf(SearchPage.SEARCH) }
-    var selectedCampsiteId by remember { mutableStateOf<String?>(null) }
+    var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
     var reloadCount by remember { mutableIntStateOf(0) }
     val repository = remember(reloadCount) { CampsiteInfoRepository() }
     val campsites = repository.campsites

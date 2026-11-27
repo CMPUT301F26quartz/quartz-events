@@ -8,7 +8,8 @@ import androidx.compose.runtime.setValue
 import com.example.quartzevents.EntrantFunctions.registrationIsOpen
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
-import kotlinx.coroutines.tasks.await
+import com.google.android.gms.tasks.Task
+import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
@@ -47,10 +48,10 @@ class LotteryRepository {
                 drawnAt = doc.getTimestamp("drawnAt"))
         }
 
-        internal suspend fun setMembership(id: String, uid: String, join: Boolean) {
+        internal fun setMembership(id: String, uid: String, join: Boolean): Task<Unit> {
             val db = Firebase.firestore
             val ref = db.collection("Lotteries").document(id)
-            db.runTransaction { tx ->
+            return db.runTransaction { tx ->
                 val doc = tx.get(ref)
                 check(doc.exists()) { "This lottery is no longer available." }
                 val lottery = readLottery(doc)
@@ -59,7 +60,7 @@ class LotteryRepository {
                     "Registration is closed."
                 }
                 if (join && uid !in lottery.entrants) {
-                    check(lottery.capacity == null || lottery.entrants.size < lottery.capacity!!) {
+                    check(!lottery.isWaitlistFull()) {
                         "This waitlist is full."
                     }
                     tx.update(ref, "entrants", FieldValue.arrayUnion(uid))
@@ -67,7 +68,8 @@ class LotteryRepository {
                     val entries = doc.get("entrants") as List<*>
                     tx.update(ref, "entrants", entries.filterNot { MessageRepo.memberId(it, "users", "uid") == uid })
                 }
-            }.await()
+                Unit
+            }
         }
     }
 
@@ -167,10 +169,16 @@ class LotteryRepository {
             .addOnFailureListener { error -> Log.d("LotteryCreation","Failure to insert Lottery Id", error) }
     }
 
+    fun addEntrant(lottery: Lottery, entrant: Entrant) =
+        setMembership(requireNotNull(lottery.id), entrant.uid, true)
+
+    fun deleteEntrant(lottery: Lottery, entrant: Entrant) =
+        setMembership(requireNotNull(lottery.id), entrant.uid, false)
+
     /** Commit one result and its inbox audience together, including for an empty waitlist. */
-    internal suspend fun finishDraw(id: String, ownerId: String) {
-        val ref = lotteryRef.document(id)
-        db.runTransaction { tx ->
+    fun selectWinner(ownerId: String, lottery: Lottery): Task<Unit> {
+        val ref = lotteryRef.document(requireNotNull(lottery.id))
+        return db.runTransaction { tx ->
             val doc = tx.get(ref)
             if (!doc.exists()) return@runTransaction
             val draw = readLottery(doc)
@@ -182,6 +190,7 @@ class LotteryRepository {
             }
             tx.update(ref, mapOf("winners" to winners, "drawnAt" to FieldValue.serverTimestamp(),
                 "resultRecipients" to (draw.entrants + winners + ownerId).distinct()))
-        }.await()
+            Unit
+        }
     }
 }

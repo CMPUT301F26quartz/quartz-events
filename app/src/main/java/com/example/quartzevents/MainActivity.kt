@@ -4,6 +4,7 @@ package com.example.quartzevents
  * Main entry point of the application.
  * Initializes Firebase and launches the app UI.
  */
+import kotlinx.coroutines.tasks.await
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -33,7 +34,7 @@ import com.example.quartzevents.OwnerFunctions.OwnerLotteryHomeScreen
 import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
-import com.example.quartzevents.EntrantFunctions.CampsiteDetailsScreen
+import com.example.quartzevents.OwnerFunctions.CampsiteDetails
 import com.example.quartzevents.OwnerFunctions.LotteryNonOwnerUpdateScreen
 import com.example.quartzevents.Repositories.LotteryRepository
 
@@ -148,7 +149,7 @@ fun QuartzEventsApp() {
 
         currentProfile?.role == "entrant" && isSearchScreenVisible -> {
             EntrantSearchScreen(
-                entrantId = currentProfile!!.uid,
+                profile = currentProfile!!,
                 onBack = {
                     isSearchScreenVisible = false
                 }
@@ -174,7 +175,7 @@ fun QuartzEventsApp() {
                     drawError = null
                     for (lottery in due) {
                         try {
-                            lotRepo.finishDraw(lottery.id!!, ownerId)
+                            lotRepo.selectWinner(ownerId, lottery).await()
                         } catch (error: com.google.firebase.firestore.FirebaseFirestoreException) {
                             drawError = "Could not finish the draw for " + lottery.name
                             Log.e("LotteryDraw", "Draw failed", error)
@@ -187,7 +188,7 @@ fun QuartzEventsApp() {
                         dismissButton = { TextButton(onClick = { drawError = null }) { Text("Close") } })
                 }
                 if (selectedCampsiteId != null) {
-                    CampsiteDetailsScreen(
+                    CampsiteDetails(
                         campsiteId = selectedCampsiteId!!,
                         onBack = { selectedCampsiteId = null }
                     )

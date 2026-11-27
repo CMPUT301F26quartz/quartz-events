@@ -3,6 +3,7 @@ package com.example.quartzevents.EntrantFunctions
 // US 01.01.05: reads a campsite by its Firestore document ID and displays its details.
 
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
 import com.example.quartzevents.LotteryFunctions.LotteryDetailScreen
 import com.example.quartzevents.Repositories.LotteryRepository
 import androidx.activity.compose.BackHandler
@@ -48,8 +49,14 @@ private val textGray = Color(0xFF686868)
 @Composable
 fun CampsiteDetailsScreen(campsiteId: String, entrantId: String? = null, onBack: () -> Unit) {
     var selectedLottery by rememberSaveable(campsiteId, entrantId) { mutableStateOf<String?>(null) }
+    var showLotteries by rememberSaveable(campsiteId, entrantId) { mutableStateOf(false) }
     if (selectedLottery != null && entrantId != null) {
         LotteryDetailScreen(selectedLottery!!, entrantId, onBack = { selectedLottery = null })
+        return
+    }
+    if (showLotteries && entrantId != null) {
+        ActiveLotteriesScreen(campsiteId, onLotSelect = { selectedLottery = it },
+            onLotClick = {}, onBack = { showLotteries = false })
         return
     }
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
@@ -84,7 +91,8 @@ fun CampsiteDetailsScreen(campsiteId: String, entrantId: String? = null, onBack:
                 TextButton(onClick = { reloadCount++ }) { Text("Retry", color = darkGreen) }
             }
             campsite == null -> Text("This campsite is no longer available.", color = textDark, modifier = Modifier.padding(20.dp))
-            else -> CampsiteDetailsContent(campsite!!, entrantId, onLottery = { selectedLottery = it })
+            else -> CampsiteDetailsContent(campsite!!, entrantId, onLottery = { selectedLottery = it },
+                onViewLotteries = { showLotteries = true })
         }
     }
 }
@@ -108,7 +116,8 @@ private fun DetailsHeader(onBack: () -> Unit) {
 
 /** Displays campsite information, its photo, and associated open lotteries. */
 @Composable
-internal fun CampsiteDetailsContent(campsite: CampsiteInfo, entrantId: String? = null, onLottery: (String) -> Unit = {}) {
+internal fun CampsiteDetailsContent(campsite: CampsiteInfo, entrantId: String? = null, onLottery: (String) -> Unit = {},
+                                   onViewLotteries: () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -140,6 +149,9 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo, entrantId: String? =
 
         DetailHeading("Available Lotteries")
         CampsiteLotteries(campsite.id, entrantId, onLottery)
+        if (entrantId != null) {
+            OutlinedButton(onClick = onViewLotteries) { Text("View campsite lotteries") }
+        }
         if (campsite.rating != null) {
             DetailHeading("Overall Rating")
             Text("★ ${campsite.rating} / 5",

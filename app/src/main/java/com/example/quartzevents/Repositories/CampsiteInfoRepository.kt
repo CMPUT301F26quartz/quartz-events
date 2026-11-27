@@ -51,10 +51,19 @@ class CampsiteInfoRepository {
         }
     }
 
+    fun getCampsite(id: String, onResult: (CampsiteInfo?, String?) -> Unit) {
+        campsiteDocument(id)
+            .addOnSuccessListener { doc -> onResult(doc.data?.let { readCampsite(id, it) }, null) }
+            .addOnFailureListener { onResult(null, "Couldn't load this campsite. Please retry.") }
+    }
+
     companion object {
+        private fun campsiteDocument(id: String) =
+            Firebase.firestore.collection("campsites").document(id).get(Source.SERVER)
+
         /** Reads one campsite without starting a listener for the entire campsite list. */
         suspend fun getCampsite(id: String): CampsiteInfo? {
-            val document = Firebase.firestore.collection("campsites").document(id).get(Source.SERVER).await()
+            val document = campsiteDocument(id).await()
             return document.data?.let { readCampsite(document.id, it) }
         }
     }
