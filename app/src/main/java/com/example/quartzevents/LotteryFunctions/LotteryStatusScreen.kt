@@ -1,5 +1,6 @@
 package com.example.quartzevents.LotteryFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,10 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,20 +29,37 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.Instant
 import androidx.compose.material3.OutlinedButton
+import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.Repositories.UserRepoMain
 
 @Composable
 fun LotteryStatusScreen (
-    onDeleteEntrant: (Lottery, Entrant) -> Unit,
-    lotteries: List<Lottery>,
-    lottery: Lottery,
-    campsite: String,
-    user: Entrant
+    lotteryId: String,
+    userId: String,
+    onBack: () -> Unit
 ){
-    var backB by remember {mutableStateOf(false)}
+    val lotRepo = remember { LotteryRepository() }
+    val lotteries = lotRepo.getAllLotteries()
+    var lottery = Lottery()
+    lotteries.forEach{ item ->
+        if (item.id == lotteryId)
+            lottery = item
+    }
+    val userRepo = remember { UserRepoMain() }
+    val entrants = userRepo.getAllEntrants()
+    var entrant = Entrant()
+    entrants.forEach{ item ->
+        if (item.uid == userId)
+            entrant = item
+    }
+    val campRepo = remember { CampsiteRepoMain() }
+    val allCampsites = campRepo.getAllCamsites()
     val months: MutableMap<Int, String> = mutableMapOf(
         Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec") )
     Column(
@@ -60,9 +75,7 @@ fun LotteryStatusScreen (
         ){
             IconButton(
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
+                onClick = onBack
             ){
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
@@ -108,12 +121,16 @@ fun LotteryStatusScreen (
 
                 Spacer(modifier = Modifier.padding(top = 5.dp))
 
+                var campsites = mutableListOf<Campsite>()
                 var sites = ""
-                var i = 0
                 for (i in 0..<(lottery.campsites.size-1)) {
-                    sites += lottery.campsites[i].location+" / "
+                    allCampsites.forEach { item ->
+                        if (item.id == lottery.campsites[i])
+                            campsites.add(item)
+                    }
+                    sites += campsites[i].location+" / "
                 }
-                sites += lottery.campsites[lottery.campsites.size-1].location
+                sites += campsites[campsites.size-1].location
 
                 Text(
                     sites,
@@ -140,10 +157,10 @@ fun LotteryStatusScreen (
                 }
 
                 Text(
-                    "Draw Date: "+months.get(
-                        lottery.registrationEnd.dateStr().slice(5..6).toInt()
-                    ) + " " + lottery.registrationEnd.dateStr().slice(8..lottery.registrationEnd.dateStr().length - 1)
-                        .toInt().toString() + ", " + lottery.registrationEnd.dateStr().slice(0..3),
+                    "Draw Date: "+months[
+                        lottery.registrationEnd.slice(5..6).toInt()
+                    ] + " " + lottery.registrationEnd.slice(8..<lottery.registrationEnd.length)
+                        .toInt().toString() + ", " + lottery.registrationEnd.slice(0..3),
                     fontSize = 14.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.SemiBold
@@ -161,7 +178,7 @@ fun LotteryStatusScreen (
 
         val instant = Instant.now()
         val currentTime = Date(instant.toString())
-        if(lottery.registrationEnd.isEqual(currentTime) or lottery.registrationEnd.isAfter(currentTime)) {
+        if(Date(lottery.registrationEnd).isEqual(currentTime) or Date(lottery.registrationEnd).isAfter(currentTime)) {
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -225,7 +242,7 @@ fun LotteryStatusScreen (
         ) {
             OutlinedButton( // referenced https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-outlined-button.html for implementation
                 onClick = {
-                    onDeleteEntrant(lottery, user)
+                    lottery.remove_contestant(entrant)
                 },
                 border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
             ) {
@@ -238,7 +255,5 @@ fun LotteryStatusScreen (
             }
         }
     }
-    if(backB){
-        LotteryDetailScreen({ lottery: Lottery, user: Entrant -> Unit},lotteries,lottery,campsite, user)
-    }
+    BackHandler(onBack = onBack)
 }
