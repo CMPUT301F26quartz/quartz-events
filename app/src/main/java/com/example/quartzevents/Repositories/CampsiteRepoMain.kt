@@ -66,7 +66,9 @@ class CampsiteRepoMain {
             .whereEqualTo("id", id)
             .get()
             .addOnSuccessListener { result ->
-                result.documents.firstOrNull()?.reference?.delete()
+                result.documents.forEach{ doc ->
+                    doc.reference.delete()
+                }
             }
             .addOnFailureListener { e -> Log.e("Firestore", "Query failed", e) }
 

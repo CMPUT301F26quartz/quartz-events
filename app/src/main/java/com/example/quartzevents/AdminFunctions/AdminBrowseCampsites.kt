@@ -53,7 +53,7 @@ import com.example.quartzevents.Classes.Campsite
 @Composable
 fun AdminBrowseCampsitesScreen(back: () -> Unit){
     val campsiteRepository = remember{ CampsiteRepoMain() }
-    val campsites = campsiteRepository.getAllCamsites()
+    var campsites = campsiteRepository.getAllCamsites()
 
     val userRepository = remember{ UserRepoMain() }
     val owners = userRepository.getAllOwners()
@@ -109,6 +109,32 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)
         )
         Spacer(modifier = Modifier.height(10.dp))
+
+        //deleting a campsite
+        if (confirmRemove && thisCampsite != null) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            VarifyRemoveCampsite(
+                thisCampsite,
+                confirm = {
+                    deleteCampsiteReservations(thisCampsite!!.id)
+                    campsiteRepository.deleteCampsite(thisCampsite!!.id)
+                    confirmRemove = false
+                    campsites = campsiteRepository.getAllCamsites()
+                    showConfirmed = true },
+                cancel = {
+                    confirmRemove = false
+                }
+            )
+            }
+
+        }
+        if (showConfirmed) {
+            DeleteCampsiteConfirmed(onOkay = { showConfirmed = false })
+        }
+        //end deleting a campsite
 
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -168,7 +194,6 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
                     Button(
                         onClick = {
                             thisCampsite = campsite
-                            println("############### Remove Clicked for |${thisCampsite!!.name}| ####################")
                             confirmRemove = true
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -176,9 +201,9 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
                             contentColor = Color.White
                         ),
                         modifier = Modifier
-                            .padding(end = 12.dp, bottom = 5.dp)
+                            .padding(end = 10.dp, bottom = 5.dp)
                             .align(Alignment.BottomEnd)
-                            .width(95.dp)
+                            .width(98.dp)
                             .height(35.dp)
                     ) {
                         Text(text = "Remove")
@@ -187,37 +212,10 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
                 Spacer(modifier = Modifier.height(10.dp))
 
             }//end loop
-        }
-
-
-    }
-
-
-        if (confirmRemove && thisCampsite != null) {
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                println("############### if statement passed ####################")
-                VarifyRemoveCampsite(
-                    thisCampsite,
-                    confirm = {
-                        deleteCampsiteReservations(thisCampsite!!.id)
-                        campsiteRepository.deleteCampsite(thisCampsite!!.id)
-                        confirmRemove = false
-                        showConfirmed = true
-                    },
-                    cancel = {
-                        confirmRemove = false
-                    }
-                )
-            }
-
-            if (showConfirmed) {
-                DeleteCampsiteConfirmed(onOkay = { showConfirmed = false })
-            }
 
         }
+
+    }//end screen column
+
 
 }
