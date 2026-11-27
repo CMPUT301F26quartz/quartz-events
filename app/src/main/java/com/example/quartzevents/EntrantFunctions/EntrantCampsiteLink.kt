@@ -35,6 +35,7 @@ internal fun campsiteIdFromLink(link: String): String? {
  */
 @Composable
 fun EntrantCampsiteLink(link: String, onBack: () -> Unit) {
+    var
     val campsiteId = remember(link) { campsiteIdFromLink(link) }
     if (campsiteId == null) {
         BackHandler(onBack = onBack)
@@ -46,5 +47,12 @@ fun EntrantCampsiteLink(link: String, onBack: () -> Unit) {
     DisposableEffect(repository) {
         onDispose { repository.stopListening() }
     }
-    CampsiteDetailsScreen(campsiteId, onBack, repository)
+    CampsiteDetailsScreen(
+        campsiteId,
+        onLotClick = {  },
+        onBack,
+        repository
+    )
+
+    if ()
 }

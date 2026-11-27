@@ -10,6 +10,7 @@ import com.example.quartzevents.Classes.Lottery
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
+import kotlin.random.Random
 
 /**
  * Repository class for Lottery objects and their associated collection in the database
@@ -140,5 +141,15 @@ class LotteryRepository {
         val ents = lottery.entrants
         ents.remove(entrant.uid)
         updateLottery(mutableMapOf<String,Any>("entrants" to ents),lottery.id!!)
+    }
+
+    fun selectWinner(ownerId: String, lottery: Lottery) {
+        val fields = mutableMapOf<String,Any>()
+        for (i in 1..lottery.winNum!!) {
+            val num = Random.nextInt(0, lottery.entrants.size)
+            lottery.winners.add(lottery.entrants[num])
+        }
+        fields["winners"] = lottery.winners
+        updateLottery(fields,lottery.id!!)
     }
 }

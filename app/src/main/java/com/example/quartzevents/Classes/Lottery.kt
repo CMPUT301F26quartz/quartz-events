@@ -34,18 +34,12 @@ class Lottery(
         entrants.clear()
     }
 
-    fun selectWinner(ownerId: String) {
-        for (i in 1..winNum!!) {
-            val num = Random.nextInt(0, entrants.size)
-            winners.add(entrants[num])
-        }
-    }
 
-    fun sendWinNotif(winnerId: String, ownerId: String): Notification {
+    fun getWinNotif(winnerId: String, ownerId: String): Notification {
         return Notification(ownerId,winnerId,"Congrats! You won the $name lottery!")
     }
 
-    fun sendLoseNotif(loserId: String, ownerId: String): Notification {
+    fun getLoseNotif(loserId: String, ownerId: String): Notification {
         return Notification(ownerId,loserId,"Unfortunately, you did not win the $name lottery. Better Luck next time.")
     }
 }
