@@ -25,10 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Campsite
+import coil.compose.AsyncImage
 
 private val QuartzGreen = Color(0xFF254D3C)
 private val QuartzWhite = Color(0xFFFFFFFF)
@@ -112,14 +114,26 @@ fun CampsiteDetails(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-                    Text(
+                    /*Text(
                         text = "image holder/space",
                         color = QuartzGreen,
                         fontWeight = FontWeight.Bold
-                    )
+                    )*/
 
-                    Spacer(modifier = Modifier.height(100.dp))
-                    Spacer(modifier = Modifier.width(16.dp))
+                    if (!data.imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = data.imageUrl,
+                            contentDescription = "Campsite Promo Image",
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        )
+                    }
+
+
 
 
                 }
