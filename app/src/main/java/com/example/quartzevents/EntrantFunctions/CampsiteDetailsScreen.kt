@@ -17,9 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
 import com.example.quartzevents.Repositories.MessageRepo
@@ -97,7 +99,7 @@ private fun DetailsHeader(onBack: () -> Unit) {
     }
 }
 
-/** Displays campsite information, a photo placeholder, and associated open lotteries. */
+/** Displays campsite information, its photo, and associated open lotteries. */
 @Composable
 internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
     Column(
@@ -105,7 +107,7 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(campsite.name, color = textDark, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        CampsitePhoto()
+        CampsitePhoto(campsite.imageUrl)
         Text(campsite.location, color = textDark, fontWeight = FontWeight.Bold)
         if (campsite.price != null) {
             Text("Price: $${campsite.price}/night", color = textDark)
@@ -146,12 +148,15 @@ private fun DetailHeading(text: String) {
     Text(text, color = darkGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
 }
 
-/** Displays a photo placeholder until network image loading is connected. */
+/** Shows the campsite photo or the placeholder for listings without an image. */
 @Composable
-private fun CampsitePhoto() {
+private fun CampsitePhoto(imageUrl: String) {
     Surface(color = cardGray, shape = RoundedCornerShape(8.dp)) {
         Box(Modifier.fillMaxWidth().height(124.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (imageUrl.isNotBlank()) {
+                AsyncImage(model = imageUrl, contentDescription = "Campsite photo",
+                    contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            } else Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.Image, contentDescription = null, tint = textGray, modifier = Modifier.size(32.dp))
                 Text("Campsite photo", color = textGray)
             }
