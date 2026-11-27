@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
 import com.example.quartzevents.Repositories.LotteryRepository
 import com.google.firebase.Firebase
@@ -45,7 +46,7 @@ private val textGray = Color(0xFF686868)
  * @param repository The shared campsite data source owned by the calling page.
  */
 @Composable
-fun CampsiteDetailsScreen(campsiteId: String, onLotClick: () -> Unit, onBack: () -> Unit, repository: CampsiteInfoRepository) {
+fun CampsiteDetailsScreen(campsiteId: String, onClick: () -> Unit, onBack: () -> Unit, repository: CampsiteInfoRepository) {
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
     var isLoading by remember(campsiteId) { mutableStateOf(true) }
     var errorMessage by remember(campsiteId) { mutableStateOf<String?>(null) }
@@ -76,7 +77,7 @@ fun CampsiteDetailsScreen(campsiteId: String, onLotClick: () -> Unit, onBack: ()
                 TextButton(onClick = { reloadCount++ }) { Text("Retry", color = darkGreen) }
             }
             campsite == null -> Text("This campsite is no longer available.", color = textDark, modifier = Modifier.padding(20.dp))
-            else -> CampsiteDetailsContent(campsite!!, onLotteryClick = { onLotClick() })
+            else -> CampsiteDetailsContent(campsite!!, onClick = { onClick() })
         }
     }
 }
@@ -100,7 +101,7 @@ private fun DetailsHeader(onBack: () -> Unit) {
 
 /** Displays campsite information, a photo placeholder, and associated open lotteries. */
 @Composable
-internal fun CampsiteDetailsContent(campsite: CampsiteInfo, onLotteryClick: () -> Unit) {
+internal fun CampsiteDetailsContent(campsite: CampsiteInfo, onClick: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -133,9 +134,7 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo, onLotteryClick: () -
         DetailHeading("Available Lotteries")
         CampsiteLotteries(
             campsite.id,
-            onTextClick = {
-                onLotteryClick()
-            }
+            onClick = { onClick() }
         )
         if (campsite.rating != null) {
             DetailHeading("Overall Rating")
@@ -183,7 +182,7 @@ internal fun registrationIsOpen(start: String, end: String, today: String): Bool
 
 /** Reads the campsite's associated lotteries from Firestore and lists those open for registration. */
 @Composable
-private fun CampsiteLotteries(campsiteId: String, onTextClick: () -> Unit) {
+private fun CampsiteLotteries(campsiteId: String, onClick: () -> Unit ) {
     var ids by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
     var loading by remember(campsiteId) { mutableStateOf(true) }
     var failed by remember(campsiteId) { mutableStateOf(false) }
@@ -237,7 +236,7 @@ private fun CampsiteLotteries(campsiteId: String, onTextClick: () -> Unit) {
                         modifier = Modifier.clickable (
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = { onTextClick() }
+                            onClick = { onClick() }
                         )
                     )
                 }

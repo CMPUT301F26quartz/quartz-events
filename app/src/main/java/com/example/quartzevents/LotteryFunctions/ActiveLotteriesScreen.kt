@@ -44,6 +44,7 @@ import com.example.quartzevents.Repositories.LotteryRepository
 @Composable
 fun ActiveLotteriesScreen(
     campsite: String,
+    onLotSelect: (String?) -> Unit,
     onLotClick: () -> Unit,
     onBack: () -> Unit
 ){
@@ -110,7 +111,10 @@ fun ActiveLotteriesScreen(
                     itemsIndexed(lotteries) { index, lottery ->
                         CampsiteLotteryDisplay( // call composable function that builds each lottery display
                             lottery = lottery,
-                            onClick = { onLotClick() }
+                            onClick = {
+                                onLotSelect(lottery.id)
+                                onLotClick()
+                            }
                         )
                         if (index < lotteries.lastIndex) {
                             HorizontalDivider()

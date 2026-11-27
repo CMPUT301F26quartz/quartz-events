@@ -7,7 +7,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
 
 /**
@@ -35,7 +37,6 @@ internal fun campsiteIdFromLink(link: String): String? {
  */
 @Composable
 fun EntrantCampsiteLink(link: String, onBack: () -> Unit) {
-    var
     val campsiteId = remember(link) { campsiteIdFromLink(link) }
     if (campsiteId == null) {
         BackHandler(onBack = onBack)
@@ -49,10 +50,8 @@ fun EntrantCampsiteLink(link: String, onBack: () -> Unit) {
     }
     CampsiteDetailsScreen(
         campsiteId,
-        onLotClick = {  },
+        onClick = {  },
         onBack,
         repository
     )
-
-    if ()
 }

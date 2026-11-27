@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,7 +20,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
+import com.example.quartzevents.LotteryFunctions.LotteryDetailScreen
+import com.example.quartzevents.LotteryFunctions.LotteryStatusScreen
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
+import com.example.quartzevents.model.UserProfile
 
 private val darkGreen = Color(0xFF244D3D)
 private val backgroundCream = Color(0xFFF7F5ED)
@@ -38,11 +43,12 @@ private enum class SearchPage { SEARCH, FILTERS, RESULTS }
  * @param onBack Returns to the entrant home page.
  */
 @Composable
-fun EntrantSearchScreen(onBack: () -> Unit) {
+fun EntrantSearchScreen(profile: UserProfile, onBack: () -> Unit) {
     var searchText by remember { mutableStateOf("") }
     var filters by remember { mutableStateOf(CampsiteFilters()) }
     var page by remember { mutableStateOf(SearchPage.SEARCH) }
     var selectedCampsiteId by remember { mutableStateOf<String?>(null) }
+    var selectedLotteryId by rememberSaveable { mutableStateOf<String?>(null) }
     var reloadCount by remember { mutableIntStateOf(0) }
     val repository = remember(reloadCount) { CampsiteInfoRepository() }
     val campsites = repository.campsites
@@ -57,9 +63,46 @@ fun EntrantSearchScreen(onBack: () -> Unit) {
     }
 
     val campsiteId = selectedCampsiteId
+    var isViewingLotteries by rememberSaveable() {mutableStateOf(false)}
+    var isViewingLotDetail by rememberSaveable() {mutableStateOf(false)}
+    var isViewingLotStatus by rememberSaveable() {mutableStateOf(false)}
     if (campsiteId != null) {
-        CampsiteDetailsScreen(campsiteId, onBack = { selectedCampsiteId = null }, repository = repository)
-        return
+        if(isViewingLotteries){
+            ActiveLotteriesScreen(
+                campsiteId,
+                onLotSelect = {id -> selectedLotteryId = id},
+                onLotClick = {
+                    isViewingLotDetail = true
+                    isViewingLotteries = false
+                },
+                onBack = {
+                    isViewingLotteries = false
+                }
+            )
+        } else if (isViewingLotDetail && selectedLotteryId != null) {
+            LotteryDetailScreen(
+                selectedLotteryId!!,
+                profile.uid,
+                onAddClick = { isViewingLotStatus = true; isViewingLotDetail = false },
+                onBack = { isViewingLotDetail = false; selectedLotteryId = null }
+            )
+        } else if (isViewingLotStatus && selectedLotteryId != null) {
+            LotteryStatusScreen(
+                selectedLotteryId!!,
+                profile.uid,
+                onBack = { isViewingLotStatus = false; isViewingLotDetail }
+            )
+        } else {
+            CampsiteDetailsScreen(
+                campsiteId,
+                onClick = {
+                    isViewingLotteries = true
+                },
+                onBack = { selectedCampsiteId = null },
+                repository = repository
+            )
+            return
+        }
     }
 
     if (page == SearchPage.FILTERS) {

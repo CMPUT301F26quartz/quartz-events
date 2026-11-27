@@ -32,6 +32,7 @@ import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen1
 import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen2
 import com.example.quartzevents.OwnerFunctions.OwnerLotteryHomeScreen
 import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
+import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.OwnerFunctions.CampsiteDetails
@@ -152,6 +153,7 @@ fun QuartzEventsApp() {
         currentProfile?.role == "entrant" && isSearchScreenVisible -> {
             //CheckLotteries()
             EntrantSearchScreen(
+                currentProfile!!,
                 onBack = {
                     isSearchScreenVisible = false
                 }
