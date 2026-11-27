@@ -117,7 +117,7 @@ class MessageRepo private constructor(messagesRef: Query, inboxUid: String? = nu
             }.await()
         }
 
-        internal suspend fun sendReservationMessage(id: String, requestId: String, body: String): Int =
+        internal suspend fun sendReservationMessage(id: String, requestId: String, body: String, replyRecipient: String? = null): Int =
             sendOnce(requestId, body, "Reservations/$id") { tx, uid, text ->
                 val db = Firebase.firestore
                 val booking = tx.get(db.collection("Reservations").document(id))
@@ -131,6 +131,7 @@ class MessageRepo private constructor(messagesRef: Query, inboxUid: String? = nu
                     else -> error("This reservation does not belong to your account.")
                 }
                 check(!receiver.isNullOrBlank() && receiver != uid) { "No linked reservation contact." }
+                check(replyRecipient == null || receiver == replyRecipient) { "The contact for this reservation has changed. Start a new message." }
                 val sender = tx.get(db.collection("users").document(uid)).getString("name") ?: uid
                 tx.set(db.collection("messages").document(), mapOf(
                     "type" to "direct", "senderId" to uid, "senderName" to sender, "receiverId" to receiver,
