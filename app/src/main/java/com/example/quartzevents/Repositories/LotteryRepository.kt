@@ -5,16 +5,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.example.quartzevents.EntrantFunctions.registrationIsOpen
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
-import com.google.android.gms.tasks.Task
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
 import android.text.format.DateFormat
+import com.google.android.gms.tasks.Task
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 
 /**
  * Repository class for Lottery objects and their associated collection in the database
@@ -55,8 +54,7 @@ class LotteryRepository {
                 val doc = tx.get(ref)
                 check(doc.exists()) { "This lottery is no longer available." }
                 val lottery = readLottery(doc)
-                check(lottery.drawnAt == null && lottery.winners.isEmpty() &&
-                    registrationIsOpen(lottery.registrationStart, lottery.registrationEnd, today())) {
+                check(lottery.registrationOpen()) {
                     "Registration is closed."
                 }
                 if (join && uid !in lottery.entrants) {
@@ -123,7 +121,11 @@ class LotteryRepository {
 
     /** Returns a specific lottery using the lottery id */
     fun getLottery(id: String): Lottery? {
-        return _lotteries.firstOrNull { it.id == id }
+        for (lottery in _lotteries) {
+            if (lottery.id == id) return lottery
+        }
+        errorMessage = "Could not fine campsite."
+        return null
     }
 
 

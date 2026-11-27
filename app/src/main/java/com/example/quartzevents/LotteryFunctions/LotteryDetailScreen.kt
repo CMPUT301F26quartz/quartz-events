@@ -1,142 +1,218 @@
 package com.example.quartzevents.LotteryFunctions
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.res.painterResource
-import com.example.quartzevents.R
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Campsite
+import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
-import com.example.quartzevents.EntrantFunctions.registrationIsOpen
+import com.example.quartzevents.R
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
 import com.example.quartzevents.Repositories.LotteryRepository
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @Composable
-fun LotteryDetailScreen(lotteryId: String, userId: String, onBack: () -> Unit) {
-    var viewEntry by rememberSaveable(lotteryId, userId) { mutableStateOf(false) }
-    LotteryEntryPage(lotteryId, userId, viewEntry,
-        onBack = { if (viewEntry) viewEntry = false else onBack() },
-        onViewEntry = { viewEntry = true }, onLeft = { viewEntry = false })
-}
-
-@Composable
-fun LotteryDetailScreen(lotteryId: String, userId: String, onAddClick: () -> Unit, onBack: () -> Unit) {
-    LotteryEntryPage(lotteryId, userId, false, onBack, onViewEntry = onAddClick, onLeft = onBack)
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun LotteryEntryPage(
-    lotteryId: String, userId: String, viewEntry: Boolean, onBack: () -> Unit,
-    onViewEntry: () -> Unit, onLeft: () -> Unit
+fun LotteryDetailScreen (
+    lotteryId: String,
+    userId: String,
+    onAddClick: () -> Unit,
+    onBack: () -> Unit
 ) {
-    var lottery by remember(lotteryId) { mutableStateOf<Lottery?>(null) }
-    var loading by remember(lotteryId) { mutableStateOf(true) }
-    var error by remember(lotteryId) { mutableStateOf<String?>(null) }
-    var saving by remember { mutableStateOf(false) }
-    var retry by remember { mutableIntStateOf(0) }
-    val scope = rememberCoroutineScope()
-    DisposableEffect(lotteryId, retry) {
-        loading = true
-        error = null
-        val listener = Firebase.firestore.collection("Lotteries").document(lotteryId)
-            .addSnapshotListener { doc, failure ->
-                loading = false
-                lottery = doc?.takeIf { it.exists() }?.let { LotteryRepository.readLottery(it) }
-                error = if (failure != null) "Could not load this lottery." else null
-            }
-        onDispose { listener.remove() }
+    val lotRepo = remember { LotteryRepository() }
+    val siteRepo = remember { CampsiteInfoRepository() }
+    DisposableEffect(lotRepo, siteRepo) {
+        onDispose {
+            lotRepo.stopListening()
+            siteRepo.stopListening()
+        }
     }
-
-    val afterJoin by rememberUpdatedState(onViewEntry)
-    val afterLeave by rememberUpdatedState(onLeft)
     BackHandler(onBack = onBack)
-    Scaffold(topBar = {
-        TopAppBar(title = { Text(if (viewEntry) "Lottery Status" else "Lottery details") }, navigationIcon = {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
-        })
-    }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val draw = lottery
-            when {
-                loading -> CircularProgressIndicator()
-                draw == null -> {
-                    Text(error ?: "This lottery is no longer available.")
-                    if (error != null) TextButton(onClick = { retry++ }) { Text("Retry") }
-                }
-                else -> {
-                    val sites = remember { CampsiteInfoRepository() }
-                    DisposableEffect(sites) { onDispose { sites.stopListening() } }
-                    val linkedSites = sites.campsites.filter { it.id in draw.campsites }
-                    val joined = userId in draw.entrants
-                    val open = draw.drawnAt == null && draw.winners.isEmpty() &&
-                        registrationIsOpen(draw.registrationStart, draw.registrationEnd, LotteryRepository.today())
-                    fun updateMembership(join: Boolean) {
-                        saving = true
-                        error = null
-                        scope.launch {
-                            try {
-                                LotteryRepository.setMembership(lotteryId, userId, join).await()
-                                if (join) afterJoin() else afterLeave()
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                error = e.localizedMessage ?: "Could not update the waitlist."
-                            } finally {
-                                saving = false
-                            }
-                        }
+    val lottery = lotRepo.getAllLotteries().firstOrNull { it.id == lotteryId }
+    if (lottery == null) {
+        Text(lotRepo.errorMessage ?: if (lotRepo.isLoading) "Loading lottery..." else "Lottery unavailable.")
+        androidx.compose.material3.TextButton(onClick = onBack, modifier = Modifier.padding(top = 32.dp)) { Text("Back") }
+        return
+    }
+    val scope = rememberCoroutineScope()
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val joined = userId in lottery.entrants
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.secondary)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primary)
+                .padding(vertical = 45.dp)
+        ) {
+            IconButton(
+                modifier = Modifier.padding(start = 15.dp),
+                onClick = onBack
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.arrow_back),
+                    contentDescription = "Back Button",
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+            }
+
+
+
+                Spacer(modifier = Modifier.padding(15.dp))
+                Text(
+                    "Lottery Details",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 25.dp, start = 25.dp, bottom = 20.dp),
+                ) {
+                    Text(
+                        lottery.name,
+                        fontSize = 25.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    val status = when {
+                        !lottery.registrationOpen() -> "Registration closed"
+                        lottery.isWaitlistFull() -> "Unavailable Currently"
+                        else -> "Open for Entry"
                     }
-                    if (viewEntry) {
-                        LotteryStatusContent(draw, userId, linkedSites, open, saving,
-                            onLeave = { updateMembership(false) })
-                    } else {
-                        Text(draw.name, style = MaterialTheme.typography.headlineSmall)
-                        Text("Registration: " + draw.registrationStart + " to " + draw.registrationEnd)
-                        Text("Booking: " + draw.bookingStart + " to " + draw.bookingEnd)
-                        Text("Included Campsites (" + draw.campsites.size + ")", style = MaterialTheme.typography.titleMedium)
-                        for (site in linkedSites) CampDisplay(site.name, site.location)
-                        if (sites.errorMessage != null) Text(sites.errorMessage!!)
-                        val full = draw.isWaitlistFull()
-                        Text("Status: " + when {
-                            !open -> "Registration closed"
-                            full -> "Waitlist full"
-                            else -> "Open for Entry"
-                        })
-                        if (joined || userId in draw.winners) {
-                            Button(onClick = onViewEntry) { Text("View my entry") }
-                        } else if (open) {
-                            Button(enabled = !saving && !full, onClick = { updateMembership(true) }) {
-                                Text(if (full) "Waitlist full" else "Join waitlist")
-                            }
-                        } else {
-                            Text("Registration is closed.")
-                        }
+                    Spacer(modifier = Modifier.padding(top = 10.dp))
+                    Text(
+                        "Status: " + status,
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.padding(top = 20.dp))
+                    Text(
+                        "Included Campsites (" + lottery.campsites.size + ")",
+                        fontSize = 23.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    val includedSites = siteRepo.campsites.filter { it.id in lottery.campsites }
+                    includedSites.forEachIndexed { index, site ->
+                        CampDisplay(name = site.name, location = site.location)
+                        if (index < includedSites.lastIndex) HorizontalDivider()
+                    }
+                    Spacer(modifier = Modifier.padding(top = 20.dp))
+                    Text(
+                        "Registration Period",
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(350.dp, 50.dp)
+                            .padding(top = 5.dp)
+                            .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
+                    ) {
+                        Text(
+                            "Registration: " + lottery.registrationStart + " - " + lottery.registrationEnd,
+                            fontSize = 20.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    Spacer(modifier = Modifier.padding(top = 15.dp))
+                    Text(
+                        "Booking Period",
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(350.dp, 50.dp)
+                            .padding(top = 5.dp)
+                            .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
+                    ) {
+                        Text(
+                            "Booking: " + lottery.bookingStart + " - " + lottery.bookingEnd,
+                            fontSize = 20.sp,
+                            color = Color.Gray
+                        )
                     }
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Button(
+                            onClick = {
+                                if (joined) {
+                                    onAddClick()
+                                } else {
+                                    saving = true
+                                    error = null
+                                    scope.launch {
+                                        try {
+                                            lotRepo.addEntrant(lottery, Entrant(uid = userId)).await()
+                                            onAddClick()
+                                        } catch (e: CancellationException) {
+                                            throw e
+                                        } catch (e: Exception) {
+                                            error = e.localizedMessage ?: "Could not join the waiting list."
+                                        } finally {
+                                            saving = false
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = !saving && (joined || (lottery.registrationOpen() && !lottery.isWaitlistFull())),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text(
+                                if (joined) "View My Entry" else "Join Waiting List",
+                                fontSize = 20.sp,
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
                 }
             }
         }
-    }
 }
 
 @Composable

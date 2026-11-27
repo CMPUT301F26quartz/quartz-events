@@ -4,7 +4,6 @@ package com.example.quartzevents
  * Main entry point of the application.
  * Initializes Firebase and launches the app UI.
  */
-import kotlinx.coroutines.tasks.await
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -32,11 +31,13 @@ import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen1
 import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen2
 import com.example.quartzevents.OwnerFunctions.OwnerLotteryHomeScreen
 import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
+import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.OwnerFunctions.CampsiteDetails
 import com.example.quartzevents.OwnerFunctions.LotteryNonOwnerUpdateScreen
 import com.example.quartzevents.Repositories.LotteryRepository
+import kotlinx.coroutines.tasks.await
 
 
 class MainActivity : ComponentActivity() {
@@ -149,7 +150,7 @@ fun QuartzEventsApp() {
 
         currentProfile?.role == "entrant" && isSearchScreenVisible -> {
             EntrantSearchScreen(
-                profile = currentProfile!!,
+                currentProfile!!,
                 onBack = {
                     isSearchScreenVisible = false
                 }
@@ -166,27 +167,7 @@ fun QuartzEventsApp() {
                 val ownerId = currentProfile!!.uid
                 val lotRepo = remember(ownerId) { LotteryRepository() }
                 DisposableEffect(lotRepo) { onDispose { lotRepo.stopListening() } }
-                val today = LotteryRepository.today()
-                val due = lotRepo.getAllLotteries().filter { it.creatorId == ownerId &&
-                    it.drawnAt == null && it.registrationEnd.isNotEmpty() && it.registrationEnd < today }
-                var drawError by remember(ownerId) { mutableStateOf<String?>(null) }
-                var retry by remember { mutableIntStateOf(0) }
-                LaunchedEffect(ownerId, due.map { it.id }, retry) {
-                    drawError = null
-                    for (lottery in due) {
-                        try {
-                            lotRepo.selectWinner(ownerId, lottery).await()
-                        } catch (error: com.google.firebase.firestore.FirebaseFirestoreException) {
-                            drawError = "Could not finish the draw for " + lottery.name
-                            Log.e("LotteryDraw", "Draw failed", error)
-                        }
-                    }
-                }
-                if (drawError != null) {
-                    AlertDialog(onDismissRequest = { drawError = null }, text = { Text(drawError!!) },
-                        confirmButton = { TextButton(onClick = { retry++ }) { Text("Retry") } },
-                        dismissButton = { TextButton(onClick = { drawError = null }) { Text("Close") } })
-                }
+                CheckLotteries(lotRepo, ownerId)
                 if (selectedCampsiteId != null) {
                     CampsiteDetails(
                         campsiteId = selectedCampsiteId!!,
@@ -359,5 +340,32 @@ private fun SearchCampsitesButton(
         )
     ) {
         Text(text = "Search Campsites")
+    }
+}
+
+/** Finish this owner's expired lotteries when they return to the app. */
+@Composable
+private fun CheckLotteries(repository: LotteryRepository, ownerId: String) {
+    val today = LotteryRepository.today()
+    val due = repository.getAllLotteries().filter {
+        it.creatorId == ownerId && it.drawnAt == null && it.registrationEnd.isNotBlank() && it.registrationEnd < today
+    }
+    var error by remember(ownerId) { mutableStateOf<String?>(null) }
+    var retry by remember { mutableIntStateOf(0) }
+    LaunchedEffect(ownerId, due.map { it.id }, retry) {
+        error = null
+        for (lottery in due) {
+            try {
+                repository.selectWinner(ownerId, lottery).await()
+            } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+                Log.e("LotteryDraw", "Could not finish draw", e)
+                error = "Could not finish the draw for " + lottery.name
+            }
+        }
+    }
+    error?.let { message ->
+        AlertDialog(onDismissRequest = { error = null }, text = { Text(message) },
+            confirmButton = { TextButton(onClick = { retry++ }) { Text("Retry") } },
+            dismissButton = { TextButton(onClick = { error = null }) { Text("Close") } })
     }
 }

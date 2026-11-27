@@ -1,6 +1,7 @@
 package com.example.quartzevents.Classes
 
-import com.google.firebase.Timestamp
+import android.text.format.DateFormat
+import com.example.quartzevents.EntrantFunctions.registrationIsOpen
 
 
 /**
@@ -19,12 +20,17 @@ class Lottery(
     var entrants: MutableList<String> = mutableListOf(),
     var winNum: Int? =null,
     var winners: MutableList<String> = mutableListOf(),
-    val drawnAt: Timestamp? = null
+    val drawnAt: com.google.firebase.Timestamp? = null
 ) {
 
 
+    internal fun registrationOpen(): Boolean {
+        val today = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
+        return drawnAt == null && winners.isEmpty() && registrationIsOpen(registrationStart, registrationEnd, today)
+    }
+
     @com.google.firebase.firestore.Exclude
-    fun isWaitlistFull(): Boolean = capacity?.let { it > 0 && entrants.size >= it } == true
+    internal fun isWaitlistFull() = capacity?.let { it > 0 && entrants.size >= it } == true
 
     fun add_contestant(contestant: Entrant) {
         entrants.add(contestant.uid)

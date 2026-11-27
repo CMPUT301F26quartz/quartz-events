@@ -8,7 +8,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.tasks.await
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
@@ -51,20 +50,23 @@ class CampsiteInfoRepository {
         }
     }
 
-    fun getCampsite(id: String, onResult: (CampsiteInfo?, String?) -> Unit) {
-        campsiteDocument(id)
-            .addOnSuccessListener { doc -> onResult(doc.data?.let { readCampsite(id, it) }, null) }
-            .addOnFailureListener { onResult(null, "Couldn't load this campsite. Please retry.") }
-    }
-
     companion object {
-        private fun campsiteDocument(id: String) =
+        /**
+         * Reads a single campsite from the Firestore server.
+         *
+         * @param id The campsite's Firestore document ID.
+         * @param onResult Receives the campsite and an optional error message. Both are null if the document is missing.
+         */
+        fun getCampsite(id: String, onResult: (CampsiteInfo?, String?) -> Unit) {
             Firebase.firestore.collection("campsites").document(id).get(Source.SERVER)
-
-        /** Reads one campsite without starting a listener for the entire campsite list. */
-        suspend fun getCampsite(id: String): CampsiteInfo? {
-            val document = campsiteDocument(id).await()
-            return document.data?.let { readCampsite(document.id, it) }
+                .addOnSuccessListener { document ->
+                    val fields = document.data
+                    val campsite = if (fields == null) null else readCampsite(document.id, fields)
+                    onResult(campsite, null)
+                }
+                .addOnFailureListener {
+                    onResult(null, "Couldn't load this campsite. Please retry.")
+                }
         }
     }
 

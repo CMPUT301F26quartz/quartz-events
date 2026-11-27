@@ -32,7 +32,7 @@ internal fun campsiteIdFromLink(link: String): String? {
  * @param onBack Returns to the caller when leaving the details page.
  */
 @Composable
-fun EntrantCampsiteLink(link: String, entrantId: String? = null, onBack: () -> Unit) {
+fun EntrantCampsiteLink(link: String, onBack: () -> Unit) {
     val campsiteId = remember(link) { campsiteIdFromLink(link) }
     if (campsiteId == null) {
         BackHandler(onBack = onBack)
@@ -40,5 +40,5 @@ fun EntrantCampsiteLink(link: String, entrantId: String? = null, onBack: () -> U
         return
     }
 
-    CampsiteDetailsScreen(campsiteId, entrantId, onBack)
+    CampsiteDetailsScreen(campsiteId, onBack = onBack)
 }

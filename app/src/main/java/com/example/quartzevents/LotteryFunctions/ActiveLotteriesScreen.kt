@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -34,11 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import com.example.quartzevents.Classes.Campsite
+import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
-import androidx.compose.runtime.DisposableEffect
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
-import com.example.quartzevents.EntrantFunctions.registrationIsOpen
 import com.example.quartzevents.Repositories.LotteryRepository
 
 @Composable
@@ -50,7 +51,12 @@ fun ActiveLotteriesScreen(
 ){
     val lotRepo = remember { LotteryRepository() }
     val siteRepo = remember { CampsiteInfoRepository() }
-    DisposableEffect(Unit) { onDispose { lotRepo.stopListening(); siteRepo.stopListening() } }
+    DisposableEffect(lotRepo, siteRepo) {
+        onDispose {
+            lotRepo.stopListening()
+            siteRepo.stopListening()
+        }
+    }
     val lotteries = lotRepo.getAllLotteries().filter { campsite in it.campsites }
     val siteNames = siteRepo.campsites.associate { it.id to it.name }
 
@@ -119,7 +125,7 @@ fun ActiveLotteriesScreen(
                     itemsIndexed(lotteries) { index, lottery ->
                         CampsiteLotteryDisplay( // call composable function that builds each lottery display
                             lottery = lottery,
-                            campsiteNames = lottery.campsites.mapNotNull(siteNames::get),
+                            siteNames = siteNames,
                             onClick = {
                                 onLotSelect(lottery.id)
                                 onLotClick()
@@ -140,21 +146,17 @@ fun ActiveLotteriesScreen(
 fun CampsiteLotteryDisplay ( // Framework for the Box displays of Lottery Info
     lottery: Lottery,
     onClick: () -> Unit
-) {
+){
     val repo = remember { CampsiteInfoRepository() }
     DisposableEffect(repo) { onDispose { repo.stopListening() } }
-    CampsiteLotteryDisplay(lottery, repo.campsites.filter { it.id in lottery.campsites }.map { it.name }, onClick)
+    CampsiteLotteryDisplay(lottery, repo.campsites.associate { it.id to it.name }, onClick)
 }
 
 @Composable
-private fun CampsiteLotteryDisplay(
-    lottery: Lottery,
-    campsiteNames: List<String>,
-    onClick: () -> Unit
-){
+private fun CampsiteLotteryDisplay(lottery: Lottery, siteNames: Map<String, String>, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .size(350.dp,110.dp)
             .clickable {onClick()}
             .background(color = Color.LightGray,shape = RoundedCornerShape(20.dp)),
     ){
@@ -175,12 +177,10 @@ private fun CampsiteLotteryDisplay(
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                val today = LotteryRepository.today()
+                val sites = lottery.campsites.mapNotNull(siteNames::get).joinToString("  ")
                 val status = when {
-                    lottery.drawnAt != null || lottery.winners.isNotEmpty() -> "Draw complete"
-                    today < lottery.registrationStart -> "Registration upcoming"
-                    !registrationIsOpen(lottery.registrationStart, lottery.registrationEnd, today) -> "Registration closed"
-                    lottery.isWaitlistFull() -> "Waitlist full"
+                    !lottery.registrationOpen() -> "Registration closed"
+                    lottery.isWaitlistFull() -> "Unavailable Currently"
                     else -> "Open for Entry"
                 }
                 Text(
@@ -190,7 +190,7 @@ private fun CampsiteLotteryDisplay(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    campsiteNames.joinToString(),
+                    sites,
                     fontSize = 15.sp,
                     color = Color.Gray
                 )

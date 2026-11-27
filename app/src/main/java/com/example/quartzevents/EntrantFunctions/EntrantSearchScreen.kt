@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,9 +20,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quartzevents.model.UserProfile
-import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
+import com.example.quartzevents.LotteryFunctions.LotteryDetailScreen
+import com.example.quartzevents.LotteryFunctions.LotteryStatusScreen
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
+import com.example.quartzevents.model.UserProfile
 
 private val darkGreen = Color(0xFF244D3D)
 private val backgroundCream = Color(0xFFF7F5ED)
@@ -40,15 +43,12 @@ private enum class SearchPage { SEARCH, FILTERS, RESULTS }
  * @param onBack Returns to the entrant home page.
  */
 @Composable
-fun EntrantSearchScreen(profile: UserProfile, onBack: () -> Unit) =
-    EntrantSearchScreen(profile.uid, onBack)
-
-@Composable
-fun EntrantSearchScreen(entrantId: String? = null, onBack: () -> Unit) {
+fun EntrantSearchScreen(profile: UserProfile, onBack: () -> Unit) {
     var searchText by remember { mutableStateOf("") }
     var filters by remember { mutableStateOf(CampsiteFilters()) }
     var page by remember { mutableStateOf(SearchPage.SEARCH) }
     var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedLotteryId by rememberSaveable { mutableStateOf<String?>(null) }
     var reloadCount by remember { mutableIntStateOf(0) }
     val repository = remember(reloadCount) { CampsiteInfoRepository() }
     val campsites = repository.campsites
@@ -63,8 +63,29 @@ fun EntrantSearchScreen(entrantId: String? = null, onBack: () -> Unit) {
     }
 
     val campsiteId = selectedCampsiteId
+    var showLotteryList by rememberSaveable(campsiteId) { mutableStateOf(false) }
+    var showEntryStatus by rememberSaveable(selectedLotteryId) { mutableStateOf(false) }
     if (campsiteId != null) {
-        CampsiteDetailsScreen(campsiteId, entrantId, onBack = { selectedCampsiteId = null })
+        val lotteryId = selectedLotteryId
+        when {
+            lotteryId != null && showEntryStatus -> LotteryStatusScreen(
+                lotteryId, profile.uid, onBack = { showEntryStatus = false }
+            )
+            lotteryId != null -> LotteryDetailScreen(
+                lotteryId, profile.uid,
+                onAddClick = { showEntryStatus = true },
+                onBack = { selectedLotteryId = null }
+            )
+            showLotteryList -> ActiveLotteriesScreen(
+                campsiteId,
+                onLotSelect = { selectedLotteryId = it },
+                onLotClick = {},
+                onBack = { showLotteryList = false }
+            )
+            else -> CampsiteDetailsScreen(
+                campsiteId, onClick = { showLotteryList = true }, onBack = { selectedCampsiteId = null }
+            )
+        }
         return
     }
 

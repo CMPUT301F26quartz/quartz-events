@@ -2,12 +2,15 @@ package com.example.quartzevents.EntrantFunctions
 
 // US 01.01.05: reads a campsite by its Firestore document ID and displays its details.
 
-import androidx.compose.runtime.saveable.rememberSaveable
-import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
-import com.example.quartzevents.LotteryFunctions.LotteryDetailScreen
 import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.Repositories.MessageRepo
+import com.google.firebase.firestore.FirebaseFirestoreException
+import kotlinx.coroutines.tasks.await
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,19 +23,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.quartzevents.Classes.Date
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
-import com.example.quartzevents.Repositories.MessageRepo
 import com.google.firebase.Firebase
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.tasks.await
 
 private val darkGreen = Color(0xFF244D3D)
 private val backgroundCream = Color(0xFFF7F5ED)
@@ -47,18 +48,12 @@ private val textGray = Color(0xFF686868)
  * @param onBack Returns to the page that opened these details.
  */
 @Composable
-fun CampsiteDetailsScreen(campsiteId: String, entrantId: String? = null, onBack: () -> Unit) {
-    var selectedLottery by rememberSaveable(campsiteId, entrantId) { mutableStateOf<String?>(null) }
-    var showLotteries by rememberSaveable(campsiteId, entrantId) { mutableStateOf(false) }
-    if (selectedLottery != null && entrantId != null) {
-        LotteryDetailScreen(selectedLottery!!, entrantId, onBack = { selectedLottery = null })
-        return
-    }
-    if (showLotteries && entrantId != null) {
-        ActiveLotteriesScreen(campsiteId, onLotSelect = { selectedLottery = it },
-            onLotClick = {}, onBack = { showLotteries = false })
-        return
-    }
+fun CampsiteDetailsScreen(
+    campsiteId: String,
+    onClick: (() -> Unit)? = null,
+    onBack: () -> Unit,
+    showOwnerActions: Boolean = false
+) {
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
     var isLoading by remember(campsiteId) { mutableStateOf(true) }
     var errorMessage by remember(campsiteId) { mutableStateOf<String?>(null) }
@@ -67,11 +62,9 @@ fun CampsiteDetailsScreen(campsiteId: String, entrantId: String? = null, onBack:
     LaunchedEffect(campsiteId, reloadCount) {
         isLoading = true
         errorMessage = null
-        try {
-            campsite = CampsiteInfoRepository.getCampsite(campsiteId)
-        } catch (error: FirebaseFirestoreException) {
-            errorMessage = "Couldn't load this campsite. Please retry."
-        } finally {
+        CampsiteInfoRepository.getCampsite(campsiteId) { result, error ->
+            campsite = result
+            errorMessage = error
             isLoading = false
         }
     }
@@ -91,8 +84,7 @@ fun CampsiteDetailsScreen(campsiteId: String, entrantId: String? = null, onBack:
                 TextButton(onClick = { reloadCount++ }) { Text("Retry", color = darkGreen) }
             }
             campsite == null -> Text("This campsite is no longer available.", color = textDark, modifier = Modifier.padding(20.dp))
-            else -> CampsiteDetailsContent(campsite!!, entrantId, onLottery = { selectedLottery = it },
-                onViewLotteries = { showLotteries = true })
+            else -> CampsiteDetailsContent(campsite!!, showOwnerActions, onClick)
         }
     }
 }
@@ -114,10 +106,13 @@ private fun DetailsHeader(onBack: () -> Unit) {
     }
 }
 
-/** Displays campsite information, its photo, and associated open lotteries. */
+/** Displays campsite information, a photo placeholder, and associated open lotteries. */
 @Composable
-internal fun CampsiteDetailsContent(campsite: CampsiteInfo, entrantId: String? = null, onLottery: (String) -> Unit = {},
-                                   onViewLotteries: () -> Unit = {}) {
+internal fun CampsiteDetailsContent(
+    campsite: CampsiteInfo,
+    showOwnerActions: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -148,14 +143,15 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo, entrantId: String? =
         }
 
         DetailHeading("Available Lotteries")
-        CampsiteLotteries(campsite.id, entrantId, onLottery)
-        if (entrantId != null) {
-            OutlinedButton(onClick = onViewLotteries) { Text("View campsite lotteries") }
-        }
+        CampsiteLotteries(campsite.id, onClick)
         if (campsite.rating != null) {
             DetailHeading("Overall Rating")
             Text("★ ${campsite.rating} / 5",
                 color = darkGreen, fontSize = 18.sp)
+        }
+        if (showOwnerActions) {
+            // The owner edit flow has not been implemented yet.
+            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) { Text("Edit Campsite") }
         }
     }
 
@@ -167,13 +163,13 @@ private fun DetailHeading(text: String) {
     Text(text, color = darkGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
 }
 
-/** Shows the campsite photo or the placeholder for listings without an image. */
+/** Displays the campsite photo or its placeholder. */
 @Composable
 private fun CampsitePhoto(imageUrl: String) {
     Surface(color = cardGray, shape = RoundedCornerShape(8.dp)) {
         Box(Modifier.fillMaxWidth().height(124.dp), contentAlignment = Alignment.Center) {
             if (imageUrl.isNotBlank()) {
-                AsyncImage(model = imageUrl, contentDescription = "Campsite photo",
+                AsyncImage(model = imageUrl, contentDescription = "Campsite Promo Image",
                     contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             } else Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.Image, contentDescription = null, tint = textGray, modifier = Modifier.size(32.dp))
@@ -201,23 +197,24 @@ internal fun registrationIsOpen(start: String, end: String, today: String): Bool
 
 /** Reads the campsite's associated lotteries from Firestore and lists those open for registration. */
 @Composable
-private fun CampsiteLotteries(campsiteId: String, entrantId: String?, onLottery: (String) -> Unit) {
-    var lotteries by remember(campsiteId, entrantId) { mutableStateOf(emptyList<com.example.quartzevents.Classes.Lottery>()) }
+private fun CampsiteLotteries(campsiteId: String, onClick: (() -> Unit)?) {
+    var names by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
     var loading by remember(campsiteId) { mutableStateOf(true) }
     var failed by remember(campsiteId) { mutableStateOf(false) }
     var reloadCount by remember { mutableIntStateOf(0) }
-    LaunchedEffect(campsiteId, entrantId, reloadCount) {
+    val interactionSource = remember {MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    LaunchedEffect(campsiteId, reloadCount) {
         loading = true
         failed = false
         val db = Firebase.firestore
         val campsite = db.collection("campsites").document(campsiteId)
         try {
-            val draws = MessageRepo.lotteriesFor(campsite.get(Source.SERVER).await())
-            val today = LotteryRepository.today()
-            lotteries = draws.map { LotteryRepository.readLottery(it) }.filter {
-                registrationIsOpen(it.registrationStart, it.registrationEnd, today) || entrantId in it.entrants
-            }
-        } catch (error: FirebaseFirestoreException) {
+            names = MessageRepo.lotteriesFor(campsite.get(Source.SERVER).await())
+                .map { LotteryRepository.readLottery(it) }
+                .filter { it.registrationOpen() }
+                .map { it.name }
+        } catch (e: FirebaseFirestoreException) {
             failed = true
         } finally {
             loading = false
@@ -229,14 +226,27 @@ private fun CampsiteLotteries(campsiteId: String, entrantId: String?, onLottery:
             Text("Lottery information couldn't be loaded.", color = textGray)
             TextButton(onClick = { reloadCount++ }) { Text("Retry lotteries", color = darkGreen) }
         }
-        lotteries.isEmpty() -> Text("No lotteries are currently open for registration.", color = textGray)
+        names.isEmpty() -> Column {
+            Text("No lotteries are currently open for registration.", color = textGray)
+            if (onClick != null) TextButton(onClick = onClick) { Text("View campsite lotteries") }
+        }
         else -> Surface(color = Color(0xFFE3D005), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (lottery in lotteries) {
-                    if (entrantId == null) Text(lottery.name, color = textDark)
-                    else TextButton(onClick = { onLottery(lottery.id!!) }) {
-                        Text(lottery.name, color = darkGreen)
-                    }
+                Text("${names.size} ${if (names.size == 1) "lottery" else "lotteries"} open", color = darkGreen, fontWeight = FontWeight.Bold)
+                for (name in names) {
+                    Text(
+                        name,
+                        textDecoration = if(isPressed)
+                            TextDecoration.Underline
+                        else
+                            TextDecoration.None,
+                        color = textDark,
+                        modifier = if (onClick == null) Modifier else Modifier.clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onClick
+                        )
+                    )
                 }
             }
         }

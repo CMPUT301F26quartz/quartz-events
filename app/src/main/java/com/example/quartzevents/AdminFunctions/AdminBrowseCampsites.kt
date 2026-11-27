@@ -12,8 +12,8 @@
 
 package com.example.quartzevents.AdminFunctions
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,13 +39,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.quartzevents.EntrantFunctions.CampsiteDetailsScreen
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextDecoration
-import com.example.quartzevents.EntrantFunctions.CampsiteDetailsScreen
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
 import com.example.quartzevents.Repositories.UserRepoMain
 
@@ -65,7 +65,7 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
     val selectedId = rememberSaveable { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
     selectedId.value?.let { id ->
-        CampsiteDetailsScreen(id) { selectedId.value = null }
+        CampsiteDetailsScreen(id, onBack = { selectedId.value = null })
         return
     }
 
