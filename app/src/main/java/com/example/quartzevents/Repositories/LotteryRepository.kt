@@ -1,8 +1,19 @@
 package com.example.quartzevents.Repositories
 
-import com.example.quartzevents.Classes.Entrant
+import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.example.quartzevents.EntrantFunctions.registrationIsOpen
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
+import kotlinx.coroutines.tasks.await
 import com.example.quartzevents.Classes.Lottery
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.firestore
+import android.text.format.DateFormat
 
 /**
  * Repository class for Lottery objects and their associated collection in the database
@@ -11,11 +22,88 @@ import com.google.firebase.firestore.FirebaseFirestore
  */
 class LotteryRepository {
 
-    private val db = FirebaseFirestore.getInstance()
+    companion object {
+        internal fun today() = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
+
+        /** Existing documents use IDs, document references or embedded records for links. */
+        internal fun readLottery(doc: DocumentSnapshot): Lottery {
+            fun ids(field: String, collection: String, key: String) =
+                (doc.get(field) as? List<*>).orEmpty().mapNotNull {
+                    MessageRepo.memberId(it, collection, key)
+                }.filter { it.isNotBlank() }.distinct().toMutableList()
+            fun date(field: String): String {
+                val raw = doc.get(field)
+                val value = (if (raw is Map<*, *>) raw["date"] else raw) as? String ?: return ""
+                val parts = value.split("-")
+                return if (parts.size == 3) listOf(parts[0], parts[1].padStart(2, '0'),
+                    parts[2].padStart(2, '0')).joinToString("-") else value
+            }
+            return Lottery(id = doc.id, name = doc.getString("name") ?: doc.id,
+                campsites = ids("campsites", "campsites", "id"), entrants = ids("entrants", "users", "uid"),
+                winners = ids("winners", "users", "uid"), creatorId = doc.getString("creatorId"),
+                registrationStart = date("registrationStart"), registrationEnd = date("registrationEnd"),
+                bookingStart = date("bookingStart"), bookingEnd = date("bookingEnd"),
+                capacity = doc.getLong("capacity")?.toInt(), winNum = doc.getLong("winNum")?.toInt(),
+                drawnAt = doc.getTimestamp("drawnAt"))
+        }
+
+        internal suspend fun setMembership(id: String, uid: String, join: Boolean) {
+            val db = Firebase.firestore
+            val ref = db.collection("Lotteries").document(id)
+            db.runTransaction { tx ->
+                val doc = tx.get(ref)
+                check(doc.exists()) { "This lottery is no longer available." }
+                val lottery = readLottery(doc)
+                check(lottery.drawnAt == null && lottery.winners.isEmpty() &&
+                    registrationIsOpen(lottery.registrationStart, lottery.registrationEnd, today())) {
+                    "Registration is closed."
+                }
+                if (join && uid !in lottery.entrants) {
+                    check(lottery.capacity == null || lottery.entrants.size < lottery.capacity!!) {
+                        "This waitlist is full."
+                    }
+                    tx.update(ref, "entrants", FieldValue.arrayUnion(uid))
+                } else if (!join && uid in lottery.entrants) {
+                    val entries = doc.get("entrants") as List<*>
+                    tx.update(ref, "entrants", entries.filterNot { MessageRepo.memberId(it, "users", "uid") == uid })
+                }
+            }.await()
+        }
+    }
+
+    private val db = Firebase.firestore
 
     private val lotteryRef = db.collection("Lotteries")
+    private val _lotteries = mutableStateListOf<Lottery>()
 
-    var lotteries: MutableList<Lottery> = mutableListOf()
+    /** Whether the initial Lottery list is still loading. */
+    var isLoading by mutableStateOf(true)
+        private set
+
+    /** The most recent list-loading error, or null when the listener succeeds. */
+    var errorMessage by mutableStateOf<String?>(null)
+        private set
+
+    private val listener: ListenerRegistration = lotteryRef.addSnapshotListener { snapshot, error ->
+        isLoading = false
+        if (error != null) {
+            errorMessage = "Couldn't load lotteries. Please retry."
+            return@addSnapshotListener
+        }
+
+        errorMessage = null
+        _lotteries.clear()
+
+        snapshot?.documents?.forEach { document ->
+            _lotteries.add(readLottery(document))
+        }
+        _lotteries.sortBy { it.name.lowercase() }
+    }
+
+    /** Removes the live list listener when its owning page leaves the composition. */
+    fun stopListening() {
+        listener.remove()
+    }
 
     /**
      * A function that returns a mutable list of Lottery Objects built from all documents present
@@ -27,18 +115,13 @@ class LotteryRepository {
      * @property onResult a lambda function that creates a mutable list of Lottery objects on success, and
      * an exception message on failure
      */
-    fun getAllLotteries(
-        onResult: (List<Lottery>?, String?) -> Unit
-    ) {
-        db.collection("campsites")
-            .get()
-            .addOnSuccessListener { result ->
-                lotteries = result.toObjects(Lottery::class.java)
-                onResult(lotteries, null)
-            }
-            .addOnFailureListener { exception ->
-                onResult(null, exception.message)
-            }
+    fun getAllLotteries(): List<Lottery> {
+        return _lotteries
+    }
+
+    /** Returns a specific lottery using the lottery id */
+    fun getLottery(id: String): Lottery? {
+        return _lotteries.firstOrNull { it.id == id }
     }
 
 
@@ -59,6 +142,8 @@ class LotteryRepository {
      */
     fun deleteLottery(lottery: Lottery) {
         lotteryRef.document(lottery.id.toString()).delete()
+            .addOnSuccessListener { Log.d("LotteryDeletion","Lottery Deleted Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryDeletion","Failure to Delete Lottery", error) }
     }
 
     /**
@@ -66,89 +151,37 @@ class LotteryRepository {
      *
      * @property lottery a Lottery object to be used to update the document
      */
-    fun updateLottery(lottery: Lottery){
-        saveLottery(lottery.id.toString(), lottery)
+    fun updateLottery(fields: MutableMap<String,Any>,lotteryId: String){
+        lotteryRef.document(lotteryId).update(fields)
+            .addOnSuccessListener { Log.d("LotteryUpdate","Lottery Updated Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryUpdate","Failure to Update Lottery",error) }
+
     }
 
     private fun saveLottery(id: String, lottery: Lottery) {
-        lottery.messagingCampsiteIds = lottery.campsites.map { it.id }.filter { it.isNotBlank() }.distinct()
         lotteryRef.document(id).set(lottery)
+            .addOnSuccessListener { Log.d("LotteryCreation","Lottery Created Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryCreation","Failure to Create Lottery", error) }
+        lotteryRef.document(id).update("id",id)
+            .addOnSuccessListener { Log.d("LotteryCreation","Lottery Id Inserted Successfully") }
+            .addOnFailureListener { error -> Log.d("LotteryCreation","Failure to insert Lottery Id", error) }
     }
 
-    /**
-     * Calls updateLottery in order to insert a new entrant into the lottery's waiting list.
-     *
-     * @property lottery a lottery object to pull info from for use in updating the document
-     * @property entrant the Entrant object to be added to the waiting list
-     */
-    fun addEntrant(lottery: Lottery, entrant: Entrant) {
-        val ents = lottery.entrants
-        ents.add(entrant)
-
-        updateLottery(
-            Lottery(
-                lottery.campsites,
-                lottery.name,
-                lottery.registrationStart,
-                lottery.registrationEnd,
-                lottery.bookingStart,
-                lottery.bookingEnd,
-                lottery.capacity,
-                lottery.id,
-                ents,
-                lottery.winNum,
-                lottery.winners
-            )
-        )
-    }
-
-    /**
-     * Calls updateLottery in order to remove an existing entrant from the lottery's waiting list.
-     *
-     * @property lottery a lottery object to pull info from for use in updating the document
-     * @property entrant the Entrant object to be removed from the waiting list
-     */
-    fun deleteEntrant(lottery: Lottery, entrant: Entrant) {
-        val ents = lottery.entrants
-        ents.remove(entrant)
-
-        updateLottery(
-            Lottery(
-                lottery.campsites,
-                lottery.name,
-                lottery.registrationStart,
-                lottery.registrationEnd,
-                lottery.bookingStart,
-                lottery.bookingEnd,
-                lottery.capacity,
-                lottery.id,
-                ents,
-                lottery.winNum,
-                lottery.winners
-            )
-        )
-    }
-
-
-    /**
-     * init function that listens for updates to the database collection in order to update lotteries list with
-     * new entries.
-     */
-    init{
-        lotteryRef.addSnapshotListener { snapshot, error ->
-            if (error != null){
-                return@addSnapshotListener
+    /** Commit one result and its inbox audience together, including for an empty waitlist. */
+    internal suspend fun finishDraw(id: String, ownerId: String) {
+        val ref = lotteryRef.document(id)
+        db.runTransaction { tx ->
+            val doc = tx.get(ref)
+            if (!doc.exists()) return@runTransaction
+            val draw = readLottery(doc)
+            if (draw.creatorId != ownerId || draw.drawnAt != null ||
+                !com.example.quartzevents.Classes.Date(draw.registrationEnd).isValidDate() ||
+                draw.registrationEnd >= today()) return@runTransaction
+            val winners = draw.winners.ifEmpty {
+                draw.entrants.shuffled().take((draw.winNum ?: 1).coerceAtLeast(0))
             }
-
-            lotteries.clear()
-
-            snapshot?.documents?.forEach { document ->
-                val lottery = document.toObject(Lottery::class.java)
-                if (lottery != null){
-                    lotteries.add(lottery)
-                }
-            }
-
-        }
+            tx.update(ref, mapOf("winners" to winners, "drawnAt" to FieldValue.serverTimestamp(),
+                "resultRecipients" to (draw.entrants + winners + ownerId).distinct()))
+        }.await()
     }
 }

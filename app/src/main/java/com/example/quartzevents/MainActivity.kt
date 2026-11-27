@@ -24,12 +24,18 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
-import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
-
+import com.example.quartzevents.OwnerFunctions.LotteryCreationScreen1
+import com.example.quartzevents.OwnerFunctions.LotteryCreationScreen2
+import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen1
+import com.example.quartzevents.OwnerFunctions.LotteryUpdateScreen2
+import com.example.quartzevents.OwnerFunctions.OwnerLotteryHomeScreen
+import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.EntrantFunctions.CampsiteDetailsScreen
+import com.example.quartzevents.OwnerFunctions.LotteryNonOwnerUpdateScreen
+import com.example.quartzevents.Repositories.LotteryRepository
 
 
 class MainActivity : ComponentActivity() {
@@ -46,7 +52,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             QuartzEventsTheme {
                 QuartzEventsApp()
-//                AdminDashboardScreen()
             }
         }
     }
@@ -70,8 +75,32 @@ fun QuartzEventsApp() {
     var isCreatingCampsite by rememberSaveable {
         mutableStateOf(false)
     }
+    var isViewingLottery by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isCreatingLottery1 by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isCreatingLottery2 by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isUpdatingLottery1 by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isUpdatingLottery2 by rememberSaveable {
+        mutableStateOf(false)
+    }
+
     var showMessages by rememberSaveable { mutableStateOf(false) }
+
     var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var selectedLotteryId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var selectedSitesForLottery by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var selectedSitesForUpdatingLottery by rememberSaveable { mutableStateOf<String?>(null) }
+
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -105,6 +134,7 @@ fun QuartzEventsApp() {
                 }
             )
         }
+
         showMessages -> MessageCenter(currentProfile!!, onBack = { showMessages = false }, onAddCampsite = {
             showMessages = false
             isCreatingCampsite = true
@@ -118,6 +148,7 @@ fun QuartzEventsApp() {
 
         currentProfile?.role == "entrant" && isSearchScreenVisible -> {
             EntrantSearchScreen(
+                entrantId = currentProfile!!.uid,
                 onBack = {
                     isSearchScreenVisible = false
                 }
@@ -131,7 +162,30 @@ fun QuartzEventsApp() {
 
 
             if (currentProfile?.role == "owner") {
-
+                val ownerId = currentProfile!!.uid
+                val lotRepo = remember(ownerId) { LotteryRepository() }
+                DisposableEffect(lotRepo) { onDispose { lotRepo.stopListening() } }
+                val today = LotteryRepository.today()
+                val due = lotRepo.getAllLotteries().filter { it.creatorId == ownerId &&
+                    it.drawnAt == null && it.registrationEnd.isNotEmpty() && it.registrationEnd < today }
+                var drawError by remember(ownerId) { mutableStateOf<String?>(null) }
+                var retry by remember { mutableIntStateOf(0) }
+                LaunchedEffect(ownerId, due.map { it.id }, retry) {
+                    drawError = null
+                    for (lottery in due) {
+                        try {
+                            lotRepo.finishDraw(lottery.id!!, ownerId)
+                        } catch (error: com.google.firebase.firestore.FirebaseFirestoreException) {
+                            drawError = "Could not finish the draw for " + lottery.name
+                            Log.e("LotteryDraw", "Draw failed", error)
+                        }
+                    }
+                }
+                if (drawError != null) {
+                    AlertDialog(onDismissRequest = { drawError = null }, text = { Text(drawError!!) },
+                        confirmButton = { TextButton(onClick = { retry++ }) { Text("Retry") } },
+                        dismissButton = { TextButton(onClick = { drawError = null }) { Text("Close") } })
+                }
                 if (selectedCampsiteId != null) {
                     CampsiteDetailsScreen(
                         campsiteId = selectedCampsiteId!!,
@@ -142,12 +196,77 @@ fun QuartzEventsApp() {
                         onBack = { isCreatingCampsite = false },
                         onSaveSuccess = { isCreatingCampsite = false }
                     )
+
+                }else if (isViewingLottery) {
+                    OwnerLotteryHomeScreen(
+                        currentProfile!!,
+                        onCreateLottery = { isCreatingLottery1 = true; isViewingLottery = false },
+                        onLotterySelect = { id -> selectedLotteryId = id },
+                        onUpdateLottery = { isUpdatingLottery1 = true; isViewingLottery = false },
+                        onBack = { isViewingLottery = false }
+                    )
+
+                } else if (isCreatingLottery1) {
+                    LotteryCreationScreen1(
+                        profile = currentProfile!!,
+                        onSelectSites = {sites -> selectedSitesForLottery = sites; isCreatingLottery2 = true; isCreatingLottery1 = false},
+                        onBack = { isCreatingLottery1 = false; isViewingLottery = true }
+                    )
+                } else if (selectedSitesForLottery != null && isCreatingLottery2) {
+                    LotteryCreationScreen2(
+                        currentProfile!!,
+                        selectedSites = selectedSitesForLottery,
+                        onCreation = {selectedSitesForLottery = null; isCreatingLottery2 = false},
+                        onBack = { selectedSitesForLottery = null; isCreatingLottery2 = false; isCreatingLottery1 = true }
+                    )
+
+                } else if (selectedLotteryId != null && isUpdatingLottery1) {
+                    val lottery = lotRepo.getLottery(selectedLotteryId!!)
+                    if (lottery?.creatorId == currentProfile!!.uid) {
+                        LotteryUpdateScreen1(
+                            profile = currentProfile!!,
+                            selectedLotteryId,
+                            onSelectSites = { sites ->
+                                selectedSitesForUpdatingLottery = sites
+                                isUpdatingLottery2 = true
+                                isUpdatingLottery1 = false
+                            },
+                            onBack = {
+                                selectedLotteryId = null
+                                isUpdatingLottery1 = false
+                                isViewingLottery = true
+                            }
+                        )
+                    } else {
+                        LotteryNonOwnerUpdateScreen(
+                            currentProfile!!,
+                            selectedLotteryId,
+                            onUpdate = {
+                                isUpdatingLottery1 = false
+                                selectedLotteryId = null
+                            },
+                            onBack = {
+                                isUpdatingLottery1 = false
+                                selectedLotteryId = null
+                                isViewingLottery = true
+                            }
+                        )
+                    }
+                } else if (selectedLotteryId != null && isUpdatingLottery2) {
+                    val sites = selectedSitesForUpdatingLottery!!.split(" ")
+                    LotteryUpdateScreen2(
+                        selectedSites = sites as MutableList<String?>,
+                        selectedLotteryId,
+                        onUpdate = {selectedLotteryId = null; isUpdatingLottery2 = false},
+                        onBack = { isUpdatingLottery2 = false; isUpdatingLottery1 = true }
+                    )
                 } else {
                     OwnerHomeScreen(
                         profile = currentProfile!!,
                         onMessages = { showMessages = true },
                         onAddCampsiteClick = { isCreatingCampsite = true },
                         onViewDetailsClick = { id -> selectedCampsiteId = id },
+                        onViewLotteriesClick = { isViewingLottery = true },
                         onLogout = {
                             repository.logout()
                             currentProfile = null

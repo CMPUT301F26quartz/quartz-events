@@ -2,6 +2,14 @@ package com.example.quartzevents
 
 // Simple local tests for entrant data, dates, and campsite search.
 
+import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.Classes.Entrant
+import com.example.quartzevents.EntrantFunctions.CampsiteFilters
+import com.example.quartzevents.EntrantFunctions.CampsiteInfo
+import com.example.quartzevents.EntrantFunctions.filterCampsites
+import com.example.quartzevents.EntrantFunctions.readCampsite
+import com.example.quartzevents.EntrantFunctions.registrationIsOpen
+import com.example.quartzevents.EntrantFunctions.validStayDates
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -22,7 +30,7 @@ class EntrantTest {
 
     @Test
     fun userType_newEntrant_returnsEntrant() {
-        assertEquals("entrant", entrant.userType())
+        assertEquals("entrant", entrant.role)
     }
 
     @Test

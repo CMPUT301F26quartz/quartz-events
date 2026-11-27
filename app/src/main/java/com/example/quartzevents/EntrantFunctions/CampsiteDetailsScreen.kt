@@ -2,7 +2,9 @@ package com.example.quartzevents.EntrantFunctions
 
 // US 01.01.05: reads a campsite by its Firestore document ID and displays its details.
 
-import android.text.format.DateFormat
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.quartzevents.LotteryFunctions.LotteryDetailScreen
+import com.example.quartzevents.Repositories.LotteryRepository
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -44,7 +46,12 @@ private val textGray = Color(0xFF686868)
  * @param onBack Returns to the page that opened these details.
  */
 @Composable
-fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit) {
+fun CampsiteDetailsScreen(campsiteId: String, entrantId: String? = null, onBack: () -> Unit) {
+    var selectedLottery by rememberSaveable(campsiteId, entrantId) { mutableStateOf<String?>(null) }
+    if (selectedLottery != null && entrantId != null) {
+        LotteryDetailScreen(selectedLottery!!, entrantId, onBack = { selectedLottery = null })
+        return
+    }
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
     var isLoading by remember(campsiteId) { mutableStateOf(true) }
     var errorMessage by remember(campsiteId) { mutableStateOf<String?>(null) }
@@ -77,7 +84,7 @@ fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit) {
                 TextButton(onClick = { reloadCount++ }) { Text("Retry", color = darkGreen) }
             }
             campsite == null -> Text("This campsite is no longer available.", color = textDark, modifier = Modifier.padding(20.dp))
-            else -> CampsiteDetailsContent(campsite!!)
+            else -> CampsiteDetailsContent(campsite!!, entrantId, onLottery = { selectedLottery = it })
         }
     }
 }
@@ -101,7 +108,7 @@ private fun DetailsHeader(onBack: () -> Unit) {
 
 /** Displays campsite information, its photo, and associated open lotteries. */
 @Composable
-internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
+internal fun CampsiteDetailsContent(campsite: CampsiteInfo, entrantId: String? = null, onLottery: (String) -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -132,7 +139,7 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
         }
 
         DetailHeading("Available Lotteries")
-        CampsiteLotteries(campsite.id)
+        CampsiteLotteries(campsite.id, entrantId, onLottery)
         if (campsite.rating != null) {
             DetailHeading("Overall Rating")
             Text("★ ${campsite.rating} / 5",
@@ -182,23 +189,21 @@ internal fun registrationIsOpen(start: String, end: String, today: String): Bool
 
 /** Reads the campsite's associated lotteries from Firestore and lists those open for registration. */
 @Composable
-private fun CampsiteLotteries(campsiteId: String) {
-    var names by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
+private fun CampsiteLotteries(campsiteId: String, entrantId: String?, onLottery: (String) -> Unit) {
+    var lotteries by remember(campsiteId, entrantId) { mutableStateOf(emptyList<com.example.quartzevents.Classes.Lottery>()) }
     var loading by remember(campsiteId) { mutableStateOf(true) }
     var failed by remember(campsiteId) { mutableStateOf(false) }
     var reloadCount by remember { mutableIntStateOf(0) }
-    LaunchedEffect(campsiteId, reloadCount) {
+    LaunchedEffect(campsiteId, entrantId, reloadCount) {
         loading = true
         failed = false
         val db = Firebase.firestore
         val campsite = db.collection("campsites").document(campsiteId)
         try {
             val draws = MessageRepo.lotteriesFor(campsite.get(Source.SERVER).await())
-            val today = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
-            names = draws.mapNotNull { draw ->
-                val start = registrationDate(draw.get("registrationStart"))
-                val end = registrationDate(draw.get("registrationEnd"))
-                if (registrationIsOpen(start, end, today)) draw.getString("name") ?: "Unnamed lottery" else null
+            val today = LotteryRepository.today()
+            lotteries = draws.map { LotteryRepository.readLottery(it) }.filter {
+                registrationIsOpen(it.registrationStart, it.registrationEnd, today) || entrantId in it.entrants
             }
         } catch (error: FirebaseFirestoreException) {
             failed = true
@@ -212,18 +217,16 @@ private fun CampsiteLotteries(campsiteId: String) {
             Text("Lottery information couldn't be loaded.", color = textGray)
             TextButton(onClick = { reloadCount++ }) { Text("Retry lotteries", color = darkGreen) }
         }
-        names.isEmpty() -> Text("No lotteries are currently open for registration.", color = textGray)
+        lotteries.isEmpty() -> Text("No lotteries are currently open for registration.", color = textGray)
         else -> Surface(color = Color(0xFFE3D005), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${names.size} ${if (names.size == 1) "lottery" else "lotteries"} open", color = darkGreen, fontWeight = FontWeight.Bold)
-                for (name in names) Text(name, color = textDark)
+                for (lottery in lotteries) {
+                    if (entrantId == null) Text(lottery.name, color = textDark)
+                    else TextButton(onClick = { onLottery(lottery.id!!) }) {
+                        Text(lottery.name, color = darkGreen)
+                    }
+                }
             }
         }
     }
-}
-
-private fun registrationDate(value: Any?): String = when (value) {
-    is String -> value
-    is Map<*, *> -> value["date"] as? String ?: ""
-    else -> ""
 }

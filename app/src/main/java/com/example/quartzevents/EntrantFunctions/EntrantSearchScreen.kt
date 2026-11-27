@@ -38,7 +38,7 @@ private enum class SearchPage { SEARCH, FILTERS, RESULTS }
  * @param onBack Returns to the entrant home page.
  */
 @Composable
-fun EntrantSearchScreen(onBack: () -> Unit) {
+fun EntrantSearchScreen(entrantId: String? = null, onBack: () -> Unit) {
     var searchText by remember { mutableStateOf("") }
     var filters by remember { mutableStateOf(CampsiteFilters()) }
     var page by remember { mutableStateOf(SearchPage.SEARCH) }
@@ -58,7 +58,7 @@ fun EntrantSearchScreen(onBack: () -> Unit) {
 
     val campsiteId = selectedCampsiteId
     if (campsiteId != null) {
-        CampsiteDetailsScreen(campsiteId, onBack = { selectedCampsiteId = null })
+        CampsiteDetailsScreen(campsiteId, entrantId, onBack = { selectedCampsiteId = null })
         return
     }
 

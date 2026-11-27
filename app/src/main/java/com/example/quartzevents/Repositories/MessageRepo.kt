@@ -22,7 +22,7 @@ import kotlinx.coroutines.tasks.await
 
 internal data class RecipientOption(val id: String, val site: String, val label: String)
 
-class MessageRepo private constructor(messagesRef: Query) {
+class MessageRepo private constructor(messagesRef: Query, inboxUid: String? = null) {
     constructor() : this(Firebase.firestore.collection("messages"))
 
     companion object {
@@ -30,7 +30,7 @@ class MessageRepo private constructor(messagesRef: Query) {
         fun mailboxFor(uid: String, sent: Boolean): MessageRepo {
             val field = if (sent) "senderId" else "receiverId"
             return MessageRepo(Firebase.firestore.collection("messages")
-                .whereEqualTo(field, uid))
+                .whereEqualTo(field, uid), if (sent) null else uid)
         }
 
         /** Reads only the open compose tab, using the signed-in user's scoped queries. */
@@ -89,7 +89,7 @@ class MessageRepo private constructor(messagesRef: Query) {
         private fun siteIndex(draw: DocumentSnapshot, campsiteId: String): Int =
             (draw.get("campsites") as? List<*>)?.indexOfFirst { memberId(it, "campsites", "id") == campsiteId } ?: -1
 
-        private fun memberId(value: Any?, collection: String, key: String): String? = when (value) {
+        internal fun memberId(value: Any?, collection: String, key: String): String? = when (value) {
             is String -> value
             is DocumentReference -> value.id.takeIf { value.parent.path == collection }
             is Map<*, *> -> value[key] as? String
@@ -187,23 +187,48 @@ class MessageRepo private constructor(messagesRef: Query) {
             else -> error.localizedMessage ?: "Could not send. Please retry."
         }
     }
+    // Result notices use the same committed draw as the status page.
+    private val results = mutableStateListOf<Notification>()
+    private var resultsLoading by mutableStateOf(inboxUid != null)
+    private var resultsError by mutableStateOf<String?>(null)
+    private val resultListener = inboxUid?.let { uid ->
+        Firebase.firestore.collection("Lotteries").whereArrayContains("resultRecipients", uid)
+            .addSnapshotListener { snapshot, error ->
+                resultsLoading = false
+                resultsError = if (error == null) null else "Couldn't load lottery results."
+                results.clear()
+                for (doc in snapshot?.documents.orEmpty()) {
+                    val draw = LotteryRepository.readLottery(doc)
+                    val notice = when (uid) {
+                        draw.creatorId -> Notification("system", uid, "The draw for " + draw.name + " is complete.").apply { kind = "draw_complete" }
+                        in draw.winners -> draw.getWinNotif(uid, "system").apply { kind = "lottery_won" }
+                        else -> draw.getLoseNotif(uid, "system").apply { kind = "lottery_lost" }
+                    }
+                    notice.documentId = "draw/" + doc.id
+                    notice.senderName = "Quartz Events"
+                    notice.title = draw.name
+                    notice.sentAt = draw.drawnAt
+                    results.add(notice)
+                }
+            }
+    }
     private val _messages = mutableStateListOf<Message>()
 
-    var isLoading by mutableStateOf(true)
-        private set
+    private var mailLoading by mutableStateOf(true)
+    val isLoading get() = mailLoading || resultsLoading
     /** The most recent list-loading error, or null when the listener succeeds. */
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
+    private var mailError by mutableStateOf<String?>(null)
+    val errorMessage get() = mailError ?: resultsError
 
     private val listener: ListenerRegistration = messagesRef.addSnapshotListener { snapshot, error ->
-        isLoading = false
+        mailLoading = false
         _messages.clear()
         if (error != null) {
-            errorMessage = "Couldn't load messages. Please retry."
+            mailError = "Couldn't load messages. Please retry."
             return@addSnapshotListener
         }
 
-        errorMessage = null
+        mailError = null
         snapshot?.documents?.forEach { document ->
             val message: Message? = when (document.getString("type")) {
                 "notification"   -> document.toObject(Notification::class.java)
@@ -217,14 +242,15 @@ class MessageRepo private constructor(messagesRef: Query) {
     /** Removes the live list listener when its owning page leaves the composition. */
     fun stopListening() {
         listener.remove()
+        resultListener?.remove()
     }
 
     fun getAllMessages():List<Message>{
-        return _messages
+        return _messages + results
     }
 
     fun getAllNotifications():List<Notification>{
-        return _messages.filterIsInstance<Notification>()
+        return _messages.filterIsInstance<Notification>() + results
     }
 
     fun getAllDirectMessages():List<DirectMessage>{
