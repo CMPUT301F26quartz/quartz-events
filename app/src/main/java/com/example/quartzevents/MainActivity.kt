@@ -36,6 +36,7 @@ import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.OwnerFunctions.CampsiteDetails
+import com.example.quartzevents.OwnerFunctions.LotteryNonOwnerUpdateScreen
 import com.example.quartzevents.Repositories.LotteryRepository
 import com.example.quartzevents.Repositories.UserRepoMain
 import java.time.LocalDate
@@ -104,6 +105,8 @@ fun QuartzEventsApp() {
     var selectedSitesForLottery by rememberSaveable { mutableStateOf<String?>(null) }
 
     var selectedSitesForUpdatingLottery by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val lotRepo = remember { LotteryRepository() }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -203,12 +206,37 @@ fun QuartzEventsApp() {
                     )
 
                 } else if (selectedLotteryId != null && isUpdatingLottery1) {
-                    LotteryUpdateScreen1(
-                        profile = currentProfile!!,
-                        selectedLotteryId,
-                        onSelectSites = {sites -> Log.d("LotteryDebug", "Sites received: '$sites'"); selectedSitesForUpdatingLottery = sites; isUpdatingLottery2 = true; isUpdatingLottery1 = false},
-                        onBack = { selectedLotteryId = null; isUpdatingLottery1 = false; isViewingLottery = true }
-                    )
+                    val lottery = lotRepo.getLottery(selectedLotteryId!!)
+                    if (lottery?.creatorId == currentProfile!!.uid) {
+                        LotteryUpdateScreen1(
+                            profile = currentProfile!!,
+                            selectedLotteryId,
+                            onSelectSites = { sites ->
+                                selectedSitesForUpdatingLottery = sites
+                                isUpdatingLottery2 = true
+                                isUpdatingLottery1 = false
+                            },
+                            onBack = {
+                                selectedLotteryId = null
+                                isUpdatingLottery1 = false
+                                isViewingLottery = true
+                            }
+                        )
+                    } else {
+                        LotteryNonOwnerUpdateScreen(
+                            currentProfile!!,
+                            selectedLotteryId,
+                            onUpdate = {
+                                isUpdatingLottery1 = false
+                                selectedLotteryId = null
+                            },
+                            onBack = {
+                                isUpdatingLottery1 = false
+                                selectedLotteryId = null
+                                isViewingLottery = true
+                            }
+                        )
+                    }
                 } else if (selectedLotteryId != null && isUpdatingLottery2) {
                     val sites = selectedSitesForUpdatingLottery!!.split(" ")
                     LotteryUpdateScreen2(

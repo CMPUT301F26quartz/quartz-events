@@ -1,16 +1,8 @@
 /**
- * Displays to the Owner Campsites they own that are part of Lotteries,
- * and what the registration periods of those lotteries are.
- *
- * Each Campsite Display includes the name of the campsite and the registration
- * start and end dates for the lottery it is a part of. These displays are contained
- * inside a lazy column for ease of display in the UI. There are three buttons at the
- * of the screen. The "create new lottery" button calls the LotteryCreationScreen1() function
- * from LotteryCreationScreen1.kt, and is the first step in the lottery creation/registration
- * process. The "Edit" button calls the LotteryUpdateScreen1() function
- * from LotteryUpdateScreen1.kt, and is the first step in the lottery update process.
- * The "delete" button does not yet have functionality, but will lead to the deletion of the
- * lottery associated with the campsite selected.
+ * Displays all lotteries for the user to browse, and they can choose to edit
+ * a lottery they are the creator of, or add one or more of their campsites
+ * to a lottery they do not own. There is also an option to initiate the lottery
+ * creation process.
  */
 
 package com.example.quartzevents.OwnerFunctions
@@ -66,8 +58,7 @@ fun OwnerLotteryHomeScreen(
     onUpdateLottery: () -> Unit
 ){
     val campRepo = remember { CampsiteRepoMain() }
-    val allCampsites = campRepo.getAllCamsites()
-    var campsites: MutableList<Campsite>
+    val campsites = campRepo.getAllCamsites()
     val lotRepo = remember { LotteryRepository() }
     val lotteries = lotRepo.getAllLotteries()
     var campInfo: MutableList<MutableMap<Pair<String,String>,MutableList<String>>> = mutableListOf<MutableMap<Pair<String,String>,MutableList<String>>>()
@@ -120,38 +111,18 @@ fun OwnerLotteryHomeScreen(
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
-                for (lottery in lotteries) {
-                    campsites = mutableListOf()
-                    for (site in lottery.campsites) { // ensures a site is only listed if the owner owns it
-                        allCampsites.forEach { item ->
-                            if (item.id == site)
-                                campsites.add(item)
-                        }
-                    }
-                    for (site in campsites) { // Building list for use in later composable
-                        campInfo.add(
-                            mutableMapOf(
-                                Pair(site.name, lottery.name) to mutableListOf(
-                                    lottery.registrationStart,
-                                    lottery.registrationEnd
-                                )
-                            )
-                        )
-                    }
-                }
 
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
-                    itemsIndexed(campInfo) { index, siteInfo ->
-                        CampsiteListing( // call composable function that builds each lottery display
-                            siteInfo = siteInfo,
+                    itemsIndexed(lotteries) { index, lottery ->
+                        LotteryListing( // call composable function that builds each lottery display
+                            lottery = lottery,
                             onAddSite = {selectedLot = it},
                             onRemoveSite = {selectedLot =
                                 Lottery()
                             },
                             selectedLot = selectedLot,
-                            lotteries = lotteries
                         )
                         if (index < campInfo.lastIndex) {
                             HorizontalDivider()
@@ -171,6 +142,9 @@ fun OwnerLotteryHomeScreen(
                         Button(  // Edit Button
                             onClick = {
                                 if(profile.uid == selectedLot.creatorId) {
+                                    onLotterySelect (selectedLot.id)
+                                    onUpdateLottery()
+                                } else {
                                     onLotterySelect (selectedLot.id)
                                     onUpdateLottery()
                                 }
@@ -225,29 +199,25 @@ fun OwnerLotteryHomeScreen(
 
 
 @Composable
-fun CampsiteListing (
-    siteInfo: MutableMap<Pair<String,String>,MutableList<String>>,
+fun LotteryListing (
+    lottery: Lottery,
     onAddSite: (Lottery) -> Unit,
     onRemoveSite: (Lottery) -> Unit,
     selectedLot: Lottery,
-    lotteries: List<Lottery>
 ) {
-    val key = siteInfo.keys.toList()[0]
-    val dates = siteInfo[key]
-    Row (
+    val campRepo = remember { CampsiteRepoMain() }
+    val dates = mutableListOf(lottery.registrationStart, lottery.registrationEnd)
+    Row(
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, bottom = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        val associatedLottery = lotteries.find {
-            it.name == key.second
-        }
 
         Checkbox(
-            checked = selectedLot.id == associatedLottery?.id,
+            checked = selectedLot.id == lottery?.id,
             onCheckedChange = { checked ->
                 if (checked) {
-                    associatedLottery?.let {
+                    lottery?.let {
                         onAddSite(it)
                     }
                 } else {
@@ -255,42 +225,50 @@ fun CampsiteListing (
                 }
             }
         )
-        Box (
+        Box(
             modifier = Modifier
                 .size(300.dp, 100.dp)
                 .padding(start = 5.dp)
                 .background(color = Color.LightGray, shape = RoundedCornerShape(20.dp))
         ) {
-            Column (
+            Column(
                 modifier = Modifier.fillMaxHeight()
             ) {
                 Text(
-                    key.second,
+                    lottery.name,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(7.dp)
                 )
-                Text(
-                    key.first,
-                    fontSize = 16.sp,
-                    color = Color.DarkGray,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(5.dp)
-                )
-                Text(
-                    "From: "+ dates?.get(0),
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(start = 8.dp,bottom = 5.dp)
-                )
+                var campsiteString = ""
+                lottery.campsites.forEach { site ->
+                    val campsite = campRepo.getCampsite(site)
+                    if (campsiteString == "")
+                        campsiteString += campsite?.name
+                    else
+                        campsiteString += " / " + campsite?.name
+                    Text(
+                        campsiteString,
+                        fontSize = 16.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(5.dp)
+                    )
+                    Text(
+                        "From: " + dates?.get(0),
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 8.dp, bottom = 5.dp)
+                    )
 
-                Text(
-                    "To: "+ dates?.get(1),
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(start =8.dp, bottom = 5.dp)
-                )
+                    Text(
+                        "To: " + dates?.get(1),
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 8.dp, bottom = 5.dp)
+                    )
+                }
             }
         }
     }
