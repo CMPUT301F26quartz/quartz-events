@@ -13,6 +13,7 @@
 package com.example.quartzevents.AdminFunctions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,12 +38,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextDecoration
 import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.UserRepoMain
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.example.quartzevents.Classes.Campsite
 
 @Composable
 fun AdminBrowseCampsitesScreen(back: () -> Unit){
@@ -51,6 +57,10 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
 
     val userRepository = remember{ UserRepoMain() }
     val owners = userRepository.getAllOwners()
+
+    var confirmRemove by remember{ mutableStateOf(false) }
+    var thisCampsite by remember { mutableStateOf<Campsite?>(null) }
+    var showConfirmed by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -117,8 +127,8 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
                 //drawing one box for the campsite's data to be written in
                 Box(
                     modifier = Modifier
-                        .size(350.dp, 105.dp)
-                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp)),
+                        .size(350.dp, 120.dp)
+                        .background(color = Color(0xFFD9D9D9), shape = RoundedCornerShape(10.dp))
                 ) {
                     Column {
                         //Campsite name
@@ -128,20 +138,18 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
                             fontSize = 20.sp,
                             modifier = Modifier.padding(start = 15.dp, top = 15.dp)
                         )
-                        Row {
-                            //campsite location
-                            Text(
-                                text = campsite.location,
-                                fontSize = 15.sp,
-                                modifier = Modifier.padding(start = 15.dp, top = 5.dp)
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = "Owner: $ownerName",
-                                fontSize = 15.sp,
-                                modifier = Modifier.padding(start = 15.dp, top = 5.dp)
-                            )
-                        }
+                        //campsite location
+                        Text(
+                            text = campsite.location,
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
+                        )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Text(
+                            text = "Owner: $ownerName",
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(start = 15.dp, top = 5.dp)
+                        )
                     }
 
                     //view details
@@ -158,23 +166,58 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
                     )
                     //remove button
                     Button(
-                        //TODO: Make Remove button work
-                        onClick = { println("Remove button clicked") },
+                        onClick = {
+                            thisCampsite = campsite
+                            println("############### Remove Clicked for |${thisCampsite!!.name}| ####################")
+                            confirmRemove = true
+                        },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red,
+                            containerColor = Color(0xFF911A1A),
                             contentColor = Color.White
                         ),
                         modifier = Modifier
                             .padding(end = 12.dp, bottom = 5.dp)
                             .align(Alignment.BottomEnd)
+                            .width(95.dp)
+                            .height(35.dp)
                     ) {
                         Text(text = "Remove")
                     }
                 }//end box
                 Spacer(modifier = Modifier.height(10.dp))
+
             }//end loop
         }
 
 
     }
+
+
+        if (confirmRemove && thisCampsite != null) {
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                println("############### if statement passed ####################")
+                VarifyRemoveCampsite(
+                    thisCampsite,
+                    confirm = {
+                        deleteCampsiteReservations(thisCampsite!!.id)
+                        campsiteRepository.deleteCampsite(thisCampsite!!.id)
+                        confirmRemove = false
+                        showConfirmed = true
+                    },
+                    cancel = {
+                        confirmRemove = false
+                    }
+                )
+            }
+
+            if (showConfirmed) {
+                DeleteCampsiteConfirmed(onOkay = { showConfirmed = false })
+            }
+
+        }
+
 }

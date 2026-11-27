@@ -1,5 +1,6 @@
 package com.example.quartzevents.Repositories
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import com.example.quartzevents.Classes.Campsite
@@ -58,6 +59,17 @@ class CampsiteRepoMain {
     /** Returns the list of all campsites owned by a particular owner */
     fun getOwnerCampsites(ownerId: String): List<Campsite>{
         return _campsites.filter{it.ownerId == ownerId}
+    }
+
+    fun deleteCampsite(id: String){
+        db.collection("campsites")
+            .whereEqualTo("id", id)
+            .get()
+            .addOnSuccessListener { result ->
+                result.documents.firstOrNull()?.reference?.delete()
+            }
+            .addOnFailureListener { e -> Log.e("Firestore", "Query failed", e) }
+
     }
 
 }
