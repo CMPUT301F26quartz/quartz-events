@@ -27,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -39,7 +38,7 @@ import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
-import com.example.quartzevents.Repositories.CampsiteInfoRepository
+import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.LotteryRepository
 
 @Composable
@@ -50,15 +49,7 @@ fun ActiveLotteriesScreen(
     onBack: () -> Unit
 ){
     val lotRepo = remember { LotteryRepository() }
-    val siteRepo = remember { CampsiteInfoRepository() }
-    DisposableEffect(lotRepo, siteRepo) {
-        onDispose {
-            lotRepo.stopListening()
-            siteRepo.stopListening()
-        }
-    }
-    val lotteries = lotRepo.getAllLotteries().filter { campsite in it.campsites }
-    val siteNames = siteRepo.campsites.associate { it.id to it.name }
+    val lotteries = lotRepo.getAllLotteries()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -107,25 +98,19 @@ fun ActiveLotteriesScreen(
                 Spacer(modifier = Modifier.padding(top = 10.dp))
 
                 Text(
-                    "For: " + (siteNames[campsite] ?: campsite),
+                    "For: " + campsite,
                     fontSize = 20.sp,
                     color = Color.Gray
                 )
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
-                when {
-                    lotRepo.isLoading -> Text("Loading lotteries...")
-                    lotRepo.errorMessage != null -> Text(lotRepo.errorMessage!!)
-                    lotteries.isEmpty() -> Text("No lotteries linked to this campsite.")
-                }
                 LazyColumn( // List of available Lottery displays
                     modifier = Modifier.fillMaxSize()
                 ) {
                     itemsIndexed(lotteries) { index, lottery ->
                         CampsiteLotteryDisplay( // call composable function that builds each lottery display
                             lottery = lottery,
-                            siteNames = siteNames,
                             onClick = {
                                 onLotSelect(lottery.id)
                                 onLotClick()
@@ -147,13 +132,11 @@ fun CampsiteLotteryDisplay ( // Framework for the Box displays of Lottery Info
     lottery: Lottery,
     onClick: () -> Unit
 ){
-    val repo = remember { CampsiteInfoRepository() }
-    DisposableEffect(repo) { onDispose { repo.stopListening() } }
-    CampsiteLotteryDisplay(lottery, repo.campsites.associate { it.id to it.name }, onClick)
-}
-
-@Composable
-private fun CampsiteLotteryDisplay(lottery: Lottery, siteNames: Map<String, String>, onClick: () -> Unit) {
+    val campRepo = remember { CampsiteRepoMain() }
+    val campsites = campRepo.getAllCamsites()
+    val months: MutableMap<Int, String> = mutableMapOf( // For use in converting Dates to more readable forms
+        Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec")
+    )
     Box(
         modifier = Modifier
             .size(350.dp,110.dp)
@@ -177,11 +160,20 @@ private fun CampsiteLotteryDisplay(lottery: Lottery, siteNames: Map<String, Stri
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                val sites = lottery.campsites.mapNotNull(siteNames::get).joinToString("  ")
-                val status = when {
-                    !lottery.registrationOpen() -> "Registration closed"
-                    lottery.isWaitlistFull() -> "Unavailable Currently"
-                    else -> "Open for Entry"
+                var status: String = ""
+                var sites: String = ""
+                lottery.campsites.forEach { siteId ->
+                    var site = Campsite()
+                    campsites.forEach { item ->
+                        if (item.id == siteId)
+                            site = item
+                    }
+                    sites += site.name + "  "
+                }
+                if (lottery.entrants.size == lottery.capacity) { // Show unavailable if the lottery capacity is hit
+                    status = "Unavailable Currently"
+                } else {
+                    status = "Open for Entry"
                 }
                 Text(
                     status,
@@ -194,8 +186,16 @@ private fun CampsiteLotteryDisplay(lottery: Lottery, siteNames: Map<String, Stri
                     fontSize = 15.sp,
                     color = Color.Gray
                 )
+                var regDates: String = ""
+                regDates += "Registration: " + months[ // puts Registration dates into a "Month day - Month day, year" format
+                    lottery.registrationStart.slice(5..6).toInt()
+                ] + " " + lottery.registrationStart.slice(8..<lottery.registrationStart.length)
+                    .toInt().toString() + " - " + months[
+                    lottery.registrationEnd.slice(5..6).toInt()
+                ] + " " + lottery.registrationEnd.slice(8..<lottery.registrationEnd.length)
+                    .toInt().toString() + ", " + lottery.registrationEnd.slice(0..3)
                 Text(
-                    "Registration: " + lottery.registrationStart + " - " + lottery.registrationEnd,
+                    regDates,
                     fontSize = 15.sp,
                     color = Color.Gray
                 )

@@ -5,10 +5,12 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.quartzevents.Classes.Notification
+import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.Classes.DirectMessage
 import com.example.quartzevents.Classes.Message
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.auth.FirebaseAuth
@@ -188,27 +190,36 @@ class MessageRepo private constructor(messagesRef: Query, inboxUid: String? = nu
             else -> error.localizedMessage ?: "Could not send. Please retry."
         }
     }
-    // Result notices use the same committed draw as the status page.
+    // Build inbox notices from the results already saved by the lottery feature.
     private val results = mutableStateListOf<Notification>()
     private var resultsLoading by mutableStateOf(inboxUid != null)
     private var resultsError by mutableStateOf<String?>(null)
     private val resultListener = inboxUid?.let { uid ->
-        Firebase.firestore.collection("Lotteries").whereArrayContains("resultRecipients", uid)
+        Firebase.firestore.collection("Lotteries").where(Filter.or(
+            Filter.equalTo("creatorId", uid),
+            Filter.arrayContains("entrants", uid),
+            Filter.arrayContains("winners", uid),
+            Filter.arrayContains("resultRecipients", uid)
+        ))
             .addSnapshotListener { snapshot, error ->
                 resultsLoading = false
                 resultsError = if (error == null) null else "Couldn't load lottery results."
                 results.clear()
                 for (doc in snapshot?.documents.orEmpty()) {
-                    val draw = LotteryRepository.readLottery(doc)
+                    val winners = (doc.get("winners") as? List<*>).orEmpty()
+                        .mapNotNull { memberId(it, "users", "uid") }
+                    val drawnAt = doc.getTimestamp("drawnAt")
+                    if (winners.isEmpty() && drawnAt == null) continue
+                    val draw = Lottery(name = doc.getString("name") ?: doc.id)
                     val notice = when (uid) {
-                        draw.creatorId -> Notification("system", uid, "The draw for " + draw.name + " is complete.").apply { kind = "draw_complete" }
-                        in draw.winners -> draw.getWinNotif(uid, "system").apply { kind = "lottery_won" }
+                        doc.getString("creatorId") -> Notification("system", uid, "The draw for " + draw.name + " is complete.").apply { kind = "draw_complete" }
+                        in winners -> draw.getWinNotif(uid, "system").apply { kind = "lottery_won" }
                         else -> draw.getLoseNotif(uid, "system").apply { kind = "lottery_lost" }
                     }
                     notice.documentId = "draw/" + doc.id
                     notice.senderName = "Quartz Events"
                     notice.title = draw.name
-                    notice.sentAt = draw.drawnAt
+                    notice.sentAt = drawnAt
                     results.add(notice)
                 }
             }

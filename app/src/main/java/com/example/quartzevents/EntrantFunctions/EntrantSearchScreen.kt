@@ -63,27 +63,42 @@ fun EntrantSearchScreen(profile: UserProfile, onBack: () -> Unit) {
     }
 
     val campsiteId = selectedCampsiteId
-    var showLotteryList by rememberSaveable(campsiteId) { mutableStateOf(false) }
-    var showEntryStatus by rememberSaveable(selectedLotteryId) { mutableStateOf(false) }
+    var isViewingLotteries by rememberSaveable() {mutableStateOf(false)}
+    var isViewingLotDetail by rememberSaveable() {mutableStateOf(false)}
+    var isViewingLotStatus by rememberSaveable() {mutableStateOf(false)}
     if (campsiteId != null) {
-        val lotteryId = selectedLotteryId
-        when {
-            lotteryId != null && showEntryStatus -> LotteryStatusScreen(
-                lotteryId, profile.uid, onBack = { showEntryStatus = false }
-            )
-            lotteryId != null -> LotteryDetailScreen(
-                lotteryId, profile.uid,
-                onAddClick = { showEntryStatus = true },
-                onBack = { selectedLotteryId = null }
-            )
-            showLotteryList -> ActiveLotteriesScreen(
+        if(isViewingLotteries){
+            ActiveLotteriesScreen(
                 campsiteId,
-                onLotSelect = { selectedLotteryId = it },
-                onLotClick = {},
-                onBack = { showLotteryList = false }
+                onLotSelect = {id -> selectedLotteryId = id},
+                onLotClick = {
+                    isViewingLotDetail = true
+                    isViewingLotteries = false
+                },
+                onBack = {
+                    isViewingLotteries = false
+                }
             )
-            else -> CampsiteDetailsScreen(
-                campsiteId, onClick = { showLotteryList = true }, onBack = { selectedCampsiteId = null }
+        } else if (isViewingLotDetail && selectedLotteryId != null) {
+            LotteryDetailScreen(
+                selectedLotteryId!!,
+                profile.uid,
+                onAddClick = { isViewingLotStatus = true; isViewingLotDetail = false },
+                onBack = { isViewingLotDetail = false; selectedLotteryId = null }
+            )
+        } else if (isViewingLotStatus && selectedLotteryId != null) {
+            LotteryStatusScreen(
+                selectedLotteryId!!,
+                profile.uid,
+                onBack = { isViewingLotStatus = false; isViewingLotDetail }
+            )
+        } else {
+            CampsiteDetailsScreen(
+                campsiteId,
+                onClick = {
+                    isViewingLotteries = true
+                },
+                onBack = { selectedCampsiteId = null }
             )
         }
         return

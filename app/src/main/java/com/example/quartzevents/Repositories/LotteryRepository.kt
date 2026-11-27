@@ -10,10 +10,7 @@ import com.example.quartzevents.Classes.Lottery
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
-import android.text.format.DateFormat
-import com.google.android.gms.tasks.Task
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
+import kotlin.random.Random
 
 /**
  * Repository class for Lottery objects and their associated collection in the database
@@ -21,55 +18,6 @@ import com.google.firebase.firestore.FieldValue
  * Connects to the database to create and maintain a list of Lottery objects from the Lotteries collection.
  */
 class LotteryRepository {
-
-    companion object {
-        internal fun today() = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
-
-        /** Existing documents use IDs, document references or embedded records for links. */
-        internal fun readLottery(doc: DocumentSnapshot): Lottery {
-            fun ids(field: String, collection: String, key: String) =
-                (doc.get(field) as? List<*>).orEmpty().mapNotNull {
-                    MessageRepo.memberId(it, collection, key)
-                }.filter { it.isNotBlank() }.distinct().toMutableList()
-            fun date(field: String): String {
-                val raw = doc.get(field)
-                val value = (if (raw is Map<*, *>) raw["date"] else raw) as? String ?: return ""
-                val parts = value.split("-")
-                return if (parts.size == 3) listOf(parts[0], parts[1].padStart(2, '0'),
-                    parts[2].padStart(2, '0')).joinToString("-") else value
-            }
-            return Lottery(id = doc.id, name = doc.getString("name") ?: doc.id,
-                campsites = ids("campsites", "campsites", "id"), entrants = ids("entrants", "users", "uid"),
-                winners = ids("winners", "users", "uid"), creatorId = doc.getString("creatorId"),
-                registrationStart = date("registrationStart"), registrationEnd = date("registrationEnd"),
-                bookingStart = date("bookingStart"), bookingEnd = date("bookingEnd"),
-                capacity = doc.getLong("capacity")?.toInt(), winNum = doc.getLong("winNum")?.toInt(),
-                drawnAt = doc.getTimestamp("drawnAt"))
-        }
-
-        internal fun setMembership(id: String, uid: String, join: Boolean): Task<Unit> {
-            val db = Firebase.firestore
-            val ref = db.collection("Lotteries").document(id)
-            return db.runTransaction { tx ->
-                val doc = tx.get(ref)
-                check(doc.exists()) { "This lottery is no longer available." }
-                val lottery = readLottery(doc)
-                check(lottery.registrationOpen()) {
-                    "Registration is closed."
-                }
-                if (join && uid !in lottery.entrants) {
-                    check(!lottery.isWaitlistFull()) {
-                        "This waitlist is full."
-                    }
-                    tx.update(ref, "entrants", FieldValue.arrayUnion(uid))
-                } else if (!join && uid in lottery.entrants) {
-                    val entries = doc.get("entrants") as List<*>
-                    tx.update(ref, "entrants", entries.filterNot { MessageRepo.memberId(it, "users", "uid") == uid })
-                }
-                Unit
-            }
-        }
-    }
 
     private val db = Firebase.firestore
 
@@ -95,7 +43,7 @@ class LotteryRepository {
         _lotteries.clear()
 
         snapshot?.documents?.forEach { document ->
-            _lotteries.add(readLottery(document))
+            _lotteries.add(document.toObject(Lottery::class.java)!!)
         }
         _lotteries.sortBy { it.name.lowercase() }
     }
@@ -171,28 +119,37 @@ class LotteryRepository {
             .addOnFailureListener { error -> Log.d("LotteryCreation","Failure to insert Lottery Id", error) }
     }
 
-    fun addEntrant(lottery: Lottery, entrant: Entrant) =
-        setMembership(requireNotNull(lottery.id), entrant.uid, true)
+    /**
+     * Calls updateLottery in order to insert a new entrant into the lottery's waiting list.
+     *
+     * @property lottery a lottery object to pull info from for use in updating the document
+     * @property entrant the Entrant object to be added to the waiting list
+     */
+    fun addEntrant(lottery: Lottery, entrant: Entrant) {
+        val ents = lottery.entrants
+        ents.add(entrant.uid)
+        updateLottery(mutableMapOf<String,Any>("entrants" to ents),lottery.id!!)
+    }
 
-    fun deleteEntrant(lottery: Lottery, entrant: Entrant) =
-        setMembership(requireNotNull(lottery.id), entrant.uid, false)
+    /**
+     * Calls updateLottery in order to remove an existing entrant from the lottery's waiting list.
+     *
+     * @property lottery a lottery object to pull info from for use in updating the document
+     * @property entrant the Entrant object to be removed from the waiting list
+     */
+    fun deleteEntrant(lottery: Lottery, entrant: Entrant) {
+        val ents = lottery.entrants
+        ents.remove(entrant.uid)
+        updateLottery(mutableMapOf<String,Any>("entrants" to ents),lottery.id!!)
+    }
 
-    /** Commit one result and its inbox audience together, including for an empty waitlist. */
-    fun selectWinner(ownerId: String, lottery: Lottery): Task<Unit> {
-        val ref = lotteryRef.document(requireNotNull(lottery.id))
-        return db.runTransaction { tx ->
-            val doc = tx.get(ref)
-            if (!doc.exists()) return@runTransaction
-            val draw = readLottery(doc)
-            if (draw.creatorId != ownerId || draw.drawnAt != null ||
-                !com.example.quartzevents.Classes.Date(draw.registrationEnd).isValidDate() ||
-                draw.registrationEnd >= today()) return@runTransaction
-            val winners = draw.winners.ifEmpty {
-                draw.entrants.shuffled().take((draw.winNum ?: 1).coerceAtLeast(0))
-            }
-            tx.update(ref, mapOf("winners" to winners, "drawnAt" to FieldValue.serverTimestamp(),
-                "resultRecipients" to (draw.entrants + winners + ownerId).distinct()))
-            Unit
+    fun selectWinner(ownerId: String, lottery: Lottery) {
+        val fields = mutableMapOf<String,Any>()
+        for (i in 1..lottery.winNum!!) {
+            val num = Random.nextInt(0, lottery.entrants.size)
+            lottery.winners.add(lottery.entrants[num])
         }
+        fields["winners"] = lottery.winners
+        updateLottery(fields,lottery.id!!)
     }
 }

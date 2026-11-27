@@ -65,36 +65,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/campsites/$(request.resource.data.siteId)).data.ownerId == uid;
     }
     match /Lotteries/{lotteryId} {
-      function isOwner() {
-        return request.auth != null
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
-      }
-      function isEntrant() {
-        return request.auth != null
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'entrant';
-      }
-      // A legacy waitlist member can be a UID, a user reference, or a map containing uid.
-      function addsSelf(shorter, longer) {
-        let extra = longer.removeAll(shorter);
-        return extra.size() == 1 && longer.size() == shorter.size() + 1
-          && longer.removeAll(extra) == shorter
-          && (extra[0] == request.auth.uid || extra[0] == /databases/$(database)/documents/users/$(request.auth.uid)
-            || (extra[0] is map && extra[0].get('uid', '') == request.auth.uid));
-      }
-      function ownWaitlistChange() {
-        let old = resource.data.get('entrants', []);
-        let before = old == null ? [] : old;
-        let after = request.resource.data.entrants;
-        return before == after || addsSelf(before, after) || addsSelf(after, before);
-      }
       allow read: if request.auth != null;
-      allow create: if isOwner() && request.resource.data.creatorId == request.auth.uid;
-      allow update: if isOwner() && (
-        (resource.data.get('creatorId', '') == request.auth.uid && request.resource.data.creatorId == request.auth.uid)
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['campsites']));
-      allow delete: if isOwner() && resource.data.get('creatorId', '') == request.auth.uid;
-      allow update: if isEntrant() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['entrants'])
-        && ownWaitlistChange();
     }
 
     match /messages/{id} {

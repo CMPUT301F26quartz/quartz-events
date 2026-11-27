@@ -24,6 +24,7 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
+import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 import com.example.quartzevents.OwnerFunctions.LotteryCreationScreen1
 import com.example.quartzevents.OwnerFunctions.LotteryCreationScreen2
@@ -37,7 +38,9 @@ import com.example.quartzevents.OwnerFunctions.RegisterCampsite
 import com.example.quartzevents.OwnerFunctions.CampsiteDetails
 import com.example.quartzevents.OwnerFunctions.LotteryNonOwnerUpdateScreen
 import com.example.quartzevents.Repositories.LotteryRepository
-import kotlinx.coroutines.tasks.await
+import com.example.quartzevents.Repositories.UserRepoMain
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 
 class MainActivity : ComponentActivity() {
@@ -103,6 +106,7 @@ fun QuartzEventsApp() {
 
     var selectedSitesForUpdatingLottery by rememberSaveable { mutableStateOf<String?>(null) }
 
+    val lotRepo = remember { LotteryRepository() }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -142,6 +146,7 @@ fun QuartzEventsApp() {
             isCreatingCampsite = true
         })
         currentProfile?.role == "admin" -> {
+            //CheckLotteries()
             AdminDashboardScreen(onLogout = {
                 repository.logout()
                 currentProfile = null
@@ -149,6 +154,7 @@ fun QuartzEventsApp() {
         }
 
         currentProfile?.role == "entrant" && isSearchScreenVisible -> {
+            //CheckLotteries()
             EntrantSearchScreen(
                 currentProfile!!,
                 onBack = {
@@ -164,10 +170,7 @@ fun QuartzEventsApp() {
 
 
             if (currentProfile?.role == "owner") {
-                val ownerId = currentProfile!!.uid
-                val lotRepo = remember(ownerId) { LotteryRepository() }
-                DisposableEffect(lotRepo) { onDispose { lotRepo.stopListening() } }
-                CheckLotteries(lotRepo, ownerId)
+                //CheckLotteries()
                 if (selectedCampsiteId != null) {
                     CampsiteDetails(
                         campsiteId = selectedCampsiteId!!,
@@ -343,29 +346,39 @@ private fun SearchCampsitesButton(
     }
 }
 
-/** Finish this owner's expired lotteries when they return to the app. */
+/**
+ * Checks the database to see if any of the lotteries have reached draw date,
+ * then calls the selectWinner function from the lottery class to
+ * start the lottery winner process if today is equal to or after the end of
+ * registration.
+ */
 @Composable
-private fun CheckLotteries(repository: LotteryRepository, ownerId: String) {
-    val today = LotteryRepository.today()
-    val due = repository.getAllLotteries().filter {
-        it.creatorId == ownerId && it.drawnAt == null && it.registrationEnd.isNotBlank() && it.registrationEnd < today
-    }
-    var error by remember(ownerId) { mutableStateOf<String?>(null) }
-    var retry by remember { mutableIntStateOf(0) }
-    LaunchedEffect(ownerId, due.map { it.id }, retry) {
-        error = null
-        for (lottery in due) {
-            try {
-                repository.selectWinner(ownerId, lottery).await()
-            } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
-                Log.e("LotteryDraw", "Could not finish draw", e)
-                error = "Could not finish the draw for " + lottery.name
+private fun CheckLotteries(){
+    val lotRepo = remember { LotteryRepository() }
+    val lotteries = lotRepo.getAllLotteries()
+    val userRepo = remember { UserRepoMain() }
+    val users = userRepo.getAllUsers()
+    val today = Date(LocalDate.now(ZoneOffset.UTC).toString()) // get current date in UTC
+    if (lotteries.isNotEmpty()) {
+        lotteries.forEach { item -> // check each lottery in the collection
+            if (Date(item.registrationEnd).isEqual(today) || Date(item.registrationEnd).isAfter(today)) {
+                if (item.creatorId != null) {
+                    lotRepo.selectWinner(item.creatorId,item)
+                    val lottery = lotRepo.getLottery(item.id!!)
+                    users.forEach { user ->
+                        if (lottery?.winners?.contains(user.uid) == true ) {
+                            val winNotif = lottery.getWinNotif(user.uid, item.creatorId)
+                        } else if (lottery?.entrants?.contains(user.uid) == true) {
+                            val loseNotif = lottery.getLoseNotif(user.uid,item.creatorId)
+                        }
+                    }
+
+                } else {
+                    throw Error("Could Not Parse Owner Id")
+                }
             }
         }
-    }
-    error?.let { message ->
-        AlertDialog(onDismissRequest = { error = null }, text = { Text(message) },
-            confirmButton = { TextButton(onClick = { retry++ }) { Text("Retry") } },
-            dismissButton = { TextButton(onClick = { error = null }) { Text("Close") } })
+    } else {
+        throw Error("No Lotteries Found.")
     }
 }

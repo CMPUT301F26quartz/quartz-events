@@ -2,7 +2,7 @@ package com.example.quartzevents.EntrantFunctions
 
 // US 01.01.05: reads a campsite by its Firestore document ID and displays its details.
 
-import com.example.quartzevents.Repositories.LotteryRepository
+import android.text.format.DateFormat
 import com.example.quartzevents.Repositories.MessageRepo
 import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.tasks.await
@@ -210,10 +210,11 @@ private fun CampsiteLotteries(campsiteId: String, onClick: (() -> Unit)?) {
         val db = Firebase.firestore
         val campsite = db.collection("campsites").document(campsiteId)
         try {
-            names = MessageRepo.lotteriesFor(campsite.get(Source.SERVER).await())
-                .map { LotteryRepository.readLottery(it) }
-                .filter { it.registrationOpen() }
-                .map { it.name }
+            val today = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
+            names = MessageRepo.lotteriesFor(campsite.get(Source.SERVER).await()).filter { doc ->
+                registrationIsOpen(doc.get("registrationStart") as? String ?: "",
+                    doc.get("registrationEnd") as? String ?: "", today)
+            }.map { it.getString("name") ?: it.id }
         } catch (e: FirebaseFirestoreException) {
             failed = true
         } finally {

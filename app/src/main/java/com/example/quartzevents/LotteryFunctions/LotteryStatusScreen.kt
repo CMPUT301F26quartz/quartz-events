@@ -19,12 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.*
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CancellationException
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,14 +27,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.Instant
 import androidx.compose.material3.OutlinedButton
 import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
-import com.example.quartzevents.Repositories.CampsiteInfoRepository
+import com.example.quartzevents.Repositories.CampsiteRepoMain
 import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.Repositories.UserRepoMain
 
 @Composable
 fun LotteryStatusScreen (
@@ -48,26 +45,25 @@ fun LotteryStatusScreen (
     onBack: () -> Unit
 ){
     val lotRepo = remember { LotteryRepository() }
-    val siteRepo = remember { CampsiteInfoRepository() }
-    DisposableEffect(lotRepo, siteRepo) {
-        onDispose {
-            lotRepo.stopListening()
-            siteRepo.stopListening()
-        }
+    val lotteries = lotRepo.getAllLotteries()
+    var lottery = Lottery()
+    lotteries.forEach{ item ->
+        if (item.id == lotteryId)
+            lottery = item
     }
-    BackHandler(onBack = onBack)
-    val lottery = lotRepo.getAllLotteries().firstOrNull { it.id == lotteryId }
-    if (lottery == null) {
-        Text(lotRepo.errorMessage ?: if (lotRepo.isLoading) "Loading lottery..." else "Lottery unavailable.")
-        androidx.compose.material3.TextButton(onClick = onBack, modifier = Modifier.padding(top = 32.dp)) { Text("Back") }
-        return
+    val userRepo = remember { UserRepoMain() }
+    val entrants = userRepo.getAllEntrants()
+    var entrant = Entrant()
+    entrants.forEach{ item ->
+        if (item.uid == userId)
+            entrant = item
     }
-    val scope = rememberCoroutineScope()
-    var saving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val joined = userId in lottery.entrants
+    val campRepo = remember { CampsiteRepoMain() }
+    val allCampsites = campRepo.getAllCamsites()
+    val months: MutableMap<Int, String> = mutableMapOf(
+        Pair(1,"Jan"), Pair(2,"Feb"), Pair(3,"Mar"), Pair(4,"Apr"), Pair(5,"May"), Pair(6,"Jun"), Pair(7,"Jul"), Pair(8,"Aug"), Pair(9,"Sep"), Pair(10,"Oct"), Pair(11,"Nov"), Pair(12,"Dec") )
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+        modifier = Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.secondary)
     ){
         Row (
@@ -125,7 +121,16 @@ fun LotteryStatusScreen (
 
                 Spacer(modifier = Modifier.padding(top = 5.dp))
 
-                val sites = siteRepo.campsites.filter { it.id in lottery.campsites }.joinToString(" / ") { it.location }
+                var campsites = mutableListOf<Campsite>()
+                var sites = ""
+                for (i in 0..<(lottery.campsites.size-1)) {
+                    allCampsites.forEach { item ->
+                        if (item.id == lottery.campsites[i])
+                            campsites.add(item)
+                    }
+                    sites += campsites[i].location+" / "
+                }
+                sites += campsites[campsites.size-1].location
 
                 Text(
                     sites,
@@ -141,7 +146,7 @@ fun LotteryStatusScreen (
                         .background(Color(0xFFBAFCA4), shape = RoundedCornerShape(20.dp))
                 ) {
                     Text(
-                        if (joined) "Joined Waiting List" else "Not on Waiting List",
+                        "Joined Waiting List",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
@@ -152,7 +157,10 @@ fun LotteryStatusScreen (
                 }
 
                 Text(
-                    "Registration ends: " + lottery.registrationEnd,
+                    "Draw Date: "+months[
+                        lottery.registrationEnd.slice(5..6).toInt()
+                    ] + " " + lottery.registrationEnd.slice(8..<lottery.registrationEnd.length)
+                        .toInt().toString() + ", " + lottery.registrationEnd.slice(0..3),
                     fontSize = 14.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.SemiBold
@@ -168,7 +176,9 @@ fun LotteryStatusScreen (
             modifier = Modifier.padding(start = 20.dp, top = 25.dp)
         )
 
-        if (lottery.drawnAt == null && lottery.winners.isEmpty()) {
+        val instant = Instant.now()
+        val currentTime = Date(instant.toString())
+        if(Date(lottery.registrationEnd).isEqual(currentTime) or Date(lottery.registrationEnd).isAfter(currentTime)) {
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -182,7 +192,7 @@ fun LotteryStatusScreen (
                 Spacer(modifier = Modifier.padding(start = 160.dp))
 
                 Text(
-                    if (joined) "Waiting" else "Not entered",
+                    "Waiting",
                     fontSize = 18.sp,
                     color = Color.DarkGray,
                     fontWeight = FontWeight.Bold,
@@ -209,7 +219,7 @@ fun LotteryStatusScreen (
                 Spacer(modifier = Modifier.padding(80.dp))
 
                 Text(
-                    if (userId in lottery.winners) "Selected" else "Not selected",
+                    "Finished",
                     fontSize = 18.sp,
                     color = Color.DarkGray,
                     fontWeight = FontWeight.Bold,
@@ -224,7 +234,6 @@ fun LotteryStatusScreen (
             )
         }
 
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Spacer(modifier = Modifier.padding(50.dp))
 
         Row(
@@ -233,22 +242,8 @@ fun LotteryStatusScreen (
         ) {
             OutlinedButton( // referenced https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3/-outlined-button.html for implementation
                 onClick = {
-                    saving = true
-                    error = null
-                    scope.launch {
-                        try {
-                            lotRepo.deleteEntrant(lottery, Entrant(uid = userId)).await()
-                            onBack()
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            error = e.localizedMessage ?: "Could not leave the waiting list."
-                        } finally {
-                            saving = false
-                        }
-                    }
+                    lottery.remove_contestant(entrant)
                 },
-                enabled = joined && lottery.registrationOpen() && !saving,
                 border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
             ) {
                 Text(
@@ -260,4 +255,5 @@ fun LotteryStatusScreen (
             }
         }
     }
+    BackHandler(onBack = onBack)
 }
