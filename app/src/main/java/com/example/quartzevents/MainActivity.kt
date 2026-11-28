@@ -174,18 +174,13 @@ fun QuartzEventsApp() {
 
 
             if (currentProfile?.role == "owner") {
-                //CheckLotteries()
-                if (selectedCampsiteId != null) {
-
                 if (editingCampsite != null) {
                     RegisterCampsite(
                         onBack = { editingCampsite = null },
                         onSaveSuccess = { editingCampsite = null },
                         campsiteToEdit = editingCampsite
                     )
-                }
-
-                else if (selectedCampsiteId != null) {
+                } else if (selectedCampsiteId != null) {
                     CampsiteDetails(
                         campsiteId = selectedCampsiteId!!,
                         onBack = { selectedCampsiteId = null },
@@ -197,7 +192,7 @@ fun QuartzEventsApp() {
                         onSaveSuccess = { isCreatingCampsite = false }
                     )
 
-                }else if (isViewingLottery) {
+                } else if (isViewingLottery) {
                     OwnerLotteryHomeScreen(
                         currentProfile!!,
                         onCreateLottery = { isCreatingLottery1 = true; isViewingLottery = false },
@@ -358,5 +353,41 @@ private fun SearchCampsitesButton(
         )
     ) {
         Text(text = "Search Campsites")
+    }
+}
+/**
+ * Checks the database to see if any of the lotteries have reached draw date,
+ * then calls the selectWinner function from the lottery class to
+ * start the lottery winner process if today is equal to or after the end of
+ * registration.
+ */
+@Composable
+private fun CheckLotteries(){
+    val lotRepo = remember { LotteryRepository() }
+    val lotteries = lotRepo.getAllLotteries()
+    val userRepo = remember { UserRepoMain() }
+    val users = userRepo.getAllUsers()
+    val today = Date(LocalDate.now(ZoneOffset.UTC).toString()) // get current date in UTC
+    if (lotteries.isNotEmpty()) {
+        lotteries.forEach { item -> // check each lottery in the collection
+            if (Date(item.registrationEnd).isEqual(today) || Date(item.registrationEnd).isAfter(today)) {
+                if (item.creatorId != null) {
+                    lotRepo.selectWinner(item.creatorId,item)
+                    val lottery = lotRepo.getLottery(item.id!!)
+                    users.forEach { user ->
+                        if (lottery?.winners?.contains(user.uid) == true ) {
+                            val winNotif = lottery.getWinNotif(user.uid, item.creatorId)
+                        } else if (lottery?.entrants?.contains(user.uid) == true) {
+                            val loseNotif = lottery.getLoseNotif(user.uid,item.creatorId)
+                        }
+                    }
+
+                } else {
+                    throw Error("Could Not Parse Owner Id")
+                }
+            }
+        }
+    } else {
+        throw Error("No Lotteries Found.")
     }
 }
