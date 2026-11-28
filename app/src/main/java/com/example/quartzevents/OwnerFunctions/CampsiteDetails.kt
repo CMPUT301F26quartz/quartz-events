@@ -50,7 +50,8 @@ private val QuartzFieldGray = Color(0xFFD9D9D9)
 @Composable
 fun CampsiteDetails(
     campsiteId: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEditClick: (Campsite) -> Unit
 ) {
     val repository = remember { CampsiteRepository() }
     var campsite by remember { mutableStateOf<Campsite?>(null) }
@@ -190,7 +191,7 @@ fun CampsiteDetails(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 androidx.compose.material3.Button(
-                    onClick = {},
+                    onClick = { onEditClick(data) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),

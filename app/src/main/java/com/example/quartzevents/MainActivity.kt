@@ -24,6 +24,7 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
+import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 
@@ -72,6 +73,8 @@ fun QuartzEventsApp() {
     }
     var showMessages by rememberSaveable { mutableStateOf(false) }
     var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var editingCampsite by remember { mutableStateOf<Campsite?>(null) }
 
     //Check if a user is already signed in
     LaunchedEffect(Unit) {
@@ -132,10 +135,19 @@ fun QuartzEventsApp() {
 
             if (currentProfile?.role == "owner") {
 
-                if (selectedCampsiteId != null) {
+                if (editingCampsite != null) {
+                    RegisterCampsite(
+                        onBack = { editingCampsite = null },
+                        onSaveSuccess = { editingCampsite = null },
+                        campsiteToEdit = editingCampsite
+                    )
+                }
+
+                else if (selectedCampsiteId != null) {
                     CampsiteDetails(
                         campsiteId = selectedCampsiteId!!,
-                        onBack = { selectedCampsiteId = null }
+                        onBack = { selectedCampsiteId = null },
+                        onEditClick = { campsite -> editingCampsite = campsite }
                     )
                 } else if (isCreatingCampsite) {
                     RegisterCampsite(
