@@ -12,6 +12,7 @@
 
 package com.example.quartzevents.AdminFunctions
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,19 +39,35 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.quartzevents.EntrantFunctions.CampsiteDetailsScreen
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextDecoration
-import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.CampsiteInfoRepository
 import com.example.quartzevents.Repositories.UserRepoMain
 
 @Composable
 fun AdminBrowseCampsitesScreen(back: () -> Unit){
-    val campsiteRepository = remember{ CampsiteRepoMain() }
-    val campsites = campsiteRepository.getAllCamsites()
+    val campsiteRepository = remember { CampsiteInfoRepository() }
+    val campsites = campsiteRepository.campsites
 
     val userRepository = remember{ UserRepoMain() }
     val owners = userRepository.getAllOwners()
+    DisposableEffect(Unit) {
+        onDispose {
+            campsiteRepository.stopListening()
+            userRepository.stopListening()
+        }
+    }
+    val selectedId = rememberSaveable { mutableStateOf<String?>(null) }
+    val scrollState = rememberScrollState()
+    selectedId.value?.let { id ->
+        CampsiteDetailsScreen(id, onBack = { selectedId.value = null })
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -102,7 +119,7 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
 
         Column(
             modifier = Modifier.fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             for(campsite in campsites){
@@ -146,13 +163,12 @@ fun AdminBrowseCampsitesScreen(back: () -> Unit){
 
                     //view details
                     Text(
-                        //TODO: make "View Details" work
-                        //TODO: lead to opening the details page
                         text = "View Details >>",
                         textDecoration = TextDecoration.Underline,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
+                            .clickable { selectedId.value = campsite.id }
                             .padding(start = 15.dp, bottom = 5.dp),
                         color = Color(0xFF324CA8)
                     )

@@ -3,6 +3,9 @@ package com.example.quartzevents.EntrantFunctions
 // US 01.01.05: reads a campsite by its Firestore document ID and displays its details.
 
 import android.text.format.DateFormat
+import com.example.quartzevents.Repositories.MessageRepo
+import com.google.firebase.firestore.FirebaseFirestoreException
+import kotlinx.coroutines.tasks.await
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,9 +28,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Date
-import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
-import com.example.quartzevents.Repositories.LotteryRepository
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
@@ -43,19 +46,23 @@ private val textGray = Color(0xFF686868)
  *
  * @param campsiteId The campsite's Firestore document ID.
  * @param onBack Returns to the page that opened these details.
- * @param repository The shared campsite data source owned by the calling page.
  */
 @Composable
-fun CampsiteDetailsScreen(campsiteId: String, onClick: () -> Unit, onBack: () -> Unit, repository: CampsiteInfoRepository) {
+fun CampsiteDetailsScreen(
+    campsiteId: String,
+    onClick: (() -> Unit)? = null,
+    onBack: () -> Unit,
+    showOwnerActions: Boolean = false
+) {
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
     var isLoading by remember(campsiteId) { mutableStateOf(true) }
     var errorMessage by remember(campsiteId) { mutableStateOf<String?>(null) }
     var reloadCount by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(campsiteId, reloadCount, repository) {
+    LaunchedEffect(campsiteId, reloadCount) {
         isLoading = true
         errorMessage = null
-        repository.getCampsite(campsiteId) { result, error ->
+        CampsiteInfoRepository.getCampsite(campsiteId) { result, error ->
             campsite = result
             errorMessage = error
             isLoading = false
@@ -77,7 +84,7 @@ fun CampsiteDetailsScreen(campsiteId: String, onClick: () -> Unit, onBack: () ->
                 TextButton(onClick = { reloadCount++ }) { Text("Retry", color = darkGreen) }
             }
             campsite == null -> Text("This campsite is no longer available.", color = textDark, modifier = Modifier.padding(20.dp))
-            else -> CampsiteDetailsContent(campsite!!, onClick = { onClick() })
+            else -> CampsiteDetailsContent(campsite!!, showOwnerActions, onClick)
         }
     }
 }
@@ -101,13 +108,17 @@ private fun DetailsHeader(onBack: () -> Unit) {
 
 /** Displays campsite information, a photo placeholder, and associated open lotteries. */
 @Composable
-internal fun CampsiteDetailsContent(campsite: CampsiteInfo, onClick: () -> Unit) {
+internal fun CampsiteDetailsContent(
+    campsite: CampsiteInfo,
+    showOwnerActions: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(campsite.name, color = textDark, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        CampsitePhoto()
+        CampsitePhoto(campsite.imageUrl)
         Text(campsite.location, color = textDark, fontWeight = FontWeight.Bold)
         if (campsite.price != null) {
             Text("Price: $${campsite.price}/night", color = textDark)
@@ -132,14 +143,15 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo, onClick: () -> Unit)
         }
 
         DetailHeading("Available Lotteries")
-        CampsiteLotteries(
-            campsite.id,
-            onClick = { onClick() }
-        )
+        CampsiteLotteries(campsite.id, onClick)
         if (campsite.rating != null) {
             DetailHeading("Overall Rating")
             Text("★ ${campsite.rating} / 5",
                 color = darkGreen, fontSize = 18.sp)
+        }
+        if (showOwnerActions) {
+            // The owner edit flow has not been implemented yet.
+            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) { Text("Edit Campsite") }
         }
     }
 
@@ -151,12 +163,15 @@ private fun DetailHeading(text: String) {
     Text(text, color = darkGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
 }
 
-/** Displays a photo placeholder until network image loading is connected. */
+/** Displays the campsite photo or its placeholder. */
 @Composable
-private fun CampsitePhoto() {
+private fun CampsitePhoto(imageUrl: String) {
     Surface(color = cardGray, shape = RoundedCornerShape(8.dp)) {
         Box(Modifier.fillMaxWidth().height(124.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (imageUrl.isNotBlank()) {
+                AsyncImage(model = imageUrl, contentDescription = "Campsite Promo Image",
+                    contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            } else Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.Image, contentDescription = null, tint = textGray, modifier = Modifier.size(32.dp))
                 Text("Campsite photo", color = textGray)
             }
@@ -182,12 +197,11 @@ internal fun registrationIsOpen(start: String, end: String, today: String): Bool
 
 /** Reads the campsite's associated lotteries from Firestore and lists those open for registration. */
 @Composable
-private fun CampsiteLotteries(campsiteId: String, onClick: () -> Unit ) {
-    var ids by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
+private fun CampsiteLotteries(campsiteId: String, onClick: (() -> Unit)?) {
+    var names by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
     var loading by remember(campsiteId) { mutableStateOf(true) }
     var failed by remember(campsiteId) { mutableStateOf(false) }
     var reloadCount by remember { mutableIntStateOf(0) }
-    val lotRepo = remember { LotteryRepository() }
     val interactionSource = remember {MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     LaunchedEffect(campsiteId, reloadCount) {
@@ -195,25 +209,17 @@ private fun CampsiteLotteries(campsiteId: String, onClick: () -> Unit ) {
         failed = false
         val db = Firebase.firestore
         val campsite = db.collection("campsites").document(campsiteId)
-        db.collection("Lotteries").whereArrayContains("campsites", campsite.id)
-            .get(Source.SERVER)
-            .addOnSuccessListener { snapshot ->
-                val openLotteries = mutableListOf<String>()
-                val today = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
-                for (document in snapshot.documents) {
-                    val start = document.get("registrationStart") as? String ?: continue
-                    val end = document.get("registrationEnd") as? String ?: continue
-                    if (registrationIsOpen(start, end, today)) {
-                        openLotteries.add(document.getString("id") ?: "")
-                    }
-                }
-                ids = openLotteries
-                loading = false
-            }
-            .addOnFailureListener {
-                failed = true
-                loading = false
-            }
+        try {
+            val today = DateFormat.format("yyyy-MM-dd", System.currentTimeMillis()).toString()
+            names = MessageRepo.lotteriesFor(campsite.get(Source.SERVER).await()).filter { doc ->
+                registrationIsOpen(doc.get("registrationStart") as? String ?: "",
+                    doc.get("registrationEnd") as? String ?: "", today)
+            }.map { it.getString("name") ?: it.id }
+        } catch (e: FirebaseFirestoreException) {
+            failed = true
+        } finally {
+            loading = false
+        }
     }
     when {
         loading -> Text("Loading lotteries…", color = textGray)
@@ -221,22 +227,25 @@ private fun CampsiteLotteries(campsiteId: String, onClick: () -> Unit ) {
             Text("Lottery information couldn't be loaded.", color = textGray)
             TextButton(onClick = { reloadCount++ }) { Text("Retry lotteries", color = darkGreen) }
         }
-        ids.isEmpty() -> Text("No lotteries are currently open for registration.", color = textGray)
+        names.isEmpty() -> Column {
+            Text("No lotteries are currently open for registration.", color = textGray)
+            if (onClick != null) TextButton(onClick = onClick) { Text("View campsite lotteries") }
+        }
         else -> Surface(color = Color(0xFFE3D005), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${ids.size} ${if (ids.size == 1) "lottery" else "lotteries"} open", color = darkGreen, fontWeight = FontWeight.Bold)
-                for (id in ids) {
+                Text("${names.size} ${if (names.size == 1) "lottery" else "lotteries"} open", color = darkGreen, fontWeight = FontWeight.Bold)
+                for (name in names) {
                     Text(
-                        lotRepo.getLottery(id)?.name ?: "",
+                        name,
                         textDecoration = if(isPressed)
                             TextDecoration.Underline
                         else
                             TextDecoration.None,
                         color = textDark,
-                        modifier = Modifier.clickable (
+                        modifier = if (onClick == null) Modifier else Modifier.clickable(
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = { onClick() }
+                            onClick = onClick
                         )
                     )
                 }

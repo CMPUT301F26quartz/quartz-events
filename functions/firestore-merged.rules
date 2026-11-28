@@ -56,7 +56,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/campsites/$(resource.data.campsiteId)).data.ownerId == request.auth.uid;
     }
 
-    // A private query context lets Firestore verify the campsite used by a list query.
+    // Older app versions save the selected campsite before sending a notice.
     match /users/{uid}/messagingContext/campsite {
       allow get: if request.auth != null && uid == request.auth.uid;
       allow create, update: if request.auth != null && uid == request.auth.uid
@@ -65,16 +65,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/campsites/$(request.resource.data.siteId)).data.ownerId == uid;
     }
     match /Lotteries/{lotteryId} {
-      function matchesOwnedSite() {
-        let uid = request.auth.uid;
-        let id = get(/databases/$(database)/documents/users/$(uid)/messagingContext/campsite).data.siteId;
-        let site = /databases/$(database)/documents/campsites/$(id);
-        let record = get(site).data;
-        return record.ownerId == uid && (
-          resource.data.campsites.hasAny([site, id, {'id': id}, record.get('id', '') == id ? record : {'id': id}])
-          || id in resource.data.get('messagingCampsiteIds', []));
-      }
-      allow read: if request.auth != null && matchesOwnedSite();
+      allow read: if request.auth != null;
     }
 
     match /messages/{id} {
@@ -112,7 +103,7 @@ service cloud.firestore {
             (d.senderId == booking.entrantId && d.receiverId == owner));
       }
       allow read: if request.auth != null && (
-        resource.data.get('senderId', '') == request.auth.uid || resource.data.get('receiverId', '') == request.auth.uid);
+        resource.data.get('senderId', '') == request.auth.uid || resource.data.get('receiverId', '') == request.auth.uid || isAdmin());
       allow create: if senderIsAuthenticated(request.resource.data) &&
         ((request.resource.data.type == 'notification' && isWaitlistNotice(request.resource.data)) ||
          (request.resource.data.type == 'direct' && isReservationMessage(request.resource.data)));
