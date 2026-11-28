@@ -7,7 +7,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
 
 /**
@@ -46,5 +48,10 @@ fun EntrantCampsiteLink(link: String, onBack: () -> Unit) {
     DisposableEffect(repository) {
         onDispose { repository.stopListening() }
     }
-    CampsiteDetailsScreen(campsiteId, onBack, repository)
+    CampsiteDetailsScreen(
+        campsiteId,
+        onClick = {  },
+        onBack,
+        repository
+    )
 }

@@ -1,5 +1,6 @@
-package com.example.quartzevents.LotteryFunctions
+package com.example.quartzevents.OwnerFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,38 +39,50 @@ import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.model.UserProfile
 
-
+// Accessed ChatGPT to determine why selectedSites was building wrong.
+// Particularly why it was not containing the site Ids it was supposed to
+// It suggested basing the checked status of the checkboxes on whether or
+// not the siteId was present in selectedSites, as well as ensuring
+// selectedSites was populated from the ids already in the lottery's campsite
+// list, and provided the following code in order to fix it:
+// Accessed 2026/11/26
 @Composable
 fun LotteryUpdateScreen1(
-    lotteries: List<Lottery>, // lotteries list - connects to db
-    campsites: List<Campsite>, // Sites explicitly owned by the Owner
-    lottery: Lottery,
-    onUpdateLottery: (Lottery) -> Unit
-){
-    var backB by remember {mutableStateOf(false)} // used in button presses for changing screens
-    var nextScreen by remember {mutableStateOf(false)}
-    var selectedSites = remember {mutableStateListOf<Campsite>()}
+    profile: UserProfile,
+    lotteryId: String?,
+    onSelectSites: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val campRepo = remember { CampsiteRepoMain() }
+    var campsites = campRepo.getAllCamsites()
+    val ownerSites = campRepo.getOwnerCampsites(profile.uid)
+    val lotRepo = remember { LotteryRepository() }
+    val lottery = lotRepo.getLottery(lotteryId!!)
+    var selectedSites by remember { mutableStateOf("") }
+
+
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.secondary)
-    ){
-        Row (
+    ) {
+        Row(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Bottom,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.primary)
                 .padding(vertical = 45.dp)
-        ){
+        ) {
             IconButton( // back button
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
-            ){
+                onClick = onBack
+            ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Back Button",
@@ -104,26 +117,38 @@ fun LotteryUpdateScreen1(
 
                 Spacer(modifier = Modifier.padding(top = 20.dp))
 
+                Text(
+                    "Your Campsites:",
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
                 LazyColumn( // List of available Lottery displays
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
-                    itemsIndexed(campsites) { index, site ->
+                    itemsIndexed(ownerSites) { index, site ->
                         SiteUpdateNameListing( // call composable function that builds each lottery display
+                            selectedSites,
                             lottery = lottery,
                             site = site,
-                            onAddSite = {selectedSites.add(it)},
-                            onRemoveSite = {selectedSites.remove(it)}
+                            onAddSite = { selectedSites = it },
+                            onRemoveSite = { selectedSites = it }
                         )
-                        if (index < campsites.lastIndex) {
+                        if (index < ownerSites.lastIndex) {
                             HorizontalDivider()
                         }
                     }
                 }
 
+                Spacer(modifier = Modifier.padding(top = 20.dp))
+
                 Button(
                     onClick = {
-                        if (selectedSites.isNotEmpty()) {
-                            nextScreen = true
+                        if (selectedSites != "") {
+                            onSelectSites(selectedSites)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -136,30 +161,30 @@ fun LotteryUpdateScreen1(
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
-                if (nextScreen){
-                    LotteryUpdateScreen2(lotteries,campsites,selectedSites,
-                        lottery,{lottery -> Unit})
-                }
+                BackHandler(onBack = onBack)
             }
         }
-    }
-    if (backB) {
-        LotteryListCampsiteSelectScreen(lotteries,campsites,{campsites, name, regS, regE, bookS, bookE, cap, entrants, winNum, winners-> Unit}, {lottery -> Unit})
     }
 }
 
 
 @Composable
-fun SiteUpdateNameListing (
-    lottery: Lottery,
+fun SiteUpdateNameListing(
+    siteIds: String,
+    lottery: Lottery?,
     site: Campsite,
-    onAddSite: (Campsite) -> Unit,
-    onRemoveSite: (Campsite) -> Unit
+    onAddSite: (String) -> Unit,
+    onRemoveSite: (String) -> Unit
 ) {
-    var isChecked by remember { mutableStateOf(false) }
-    if (site in lottery.campsites) {
-        isChecked = true
-    }
+    val siteId = site.id
+
+    // Parse the current selected campsite IDs
+    val selectedIds = siteIds.split(" ")
+        .filter { it.isNotBlank() }
+
+    // A campsite is checked if it is selected
+    val isChecked = siteId in selectedIds
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -169,15 +194,26 @@ fun SiteUpdateNameListing (
     ) {
         Checkbox(
             checked = isChecked,
-            onCheckedChange = {
-                isChecked = it
-                if (isChecked) {
-                    onAddSite(site)
-                } else if (!isChecked) {
-                    onRemoveSite(site)
+            onCheckedChange = { checked ->
+
+                val updatedIds = if (checked) {
+                    selectedIds + siteId
+                } else {
+                    selectedIds.filter { it != siteId }
                 }
-            },
+
+                val updatedSites = updatedIds
+                    .distinct()
+                    .joinToString(" ")
+
+                if (checked) {
+                    onAddSite(updatedSites)
+                } else {
+                    onRemoveSite(updatedSites)
+                }
+            }
         )
+
         Box(
             modifier = Modifier
                 .size(300.dp, 80.dp)
@@ -194,3 +230,5 @@ fun SiteUpdateNameListing (
         }
     }
 }
+
+

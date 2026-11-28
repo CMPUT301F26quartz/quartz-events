@@ -5,6 +5,9 @@ package com.example.quartzevents.EntrantFunctions
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,10 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quartzevents.Classes.Date
+import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
 import com.example.quartzevents.Repositories.CampsiteInfoRepository
+import com.example.quartzevents.Repositories.LotteryRepository
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
@@ -40,7 +46,7 @@ private val textGray = Color(0xFF686868)
  * @param repository The shared campsite data source owned by the calling page.
  */
 @Composable
-fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit, repository: CampsiteInfoRepository) {
+fun CampsiteDetailsScreen(campsiteId: String, onClick: () -> Unit, onBack: () -> Unit, repository: CampsiteInfoRepository) {
     var campsite by remember(campsiteId) { mutableStateOf<CampsiteInfo?>(null) }
     var isLoading by remember(campsiteId) { mutableStateOf(true) }
     var errorMessage by remember(campsiteId) { mutableStateOf<String?>(null) }
@@ -71,7 +77,7 @@ fun CampsiteDetailsScreen(campsiteId: String, onBack: () -> Unit, repository: Ca
                 TextButton(onClick = { reloadCount++ }) { Text("Retry", color = darkGreen) }
             }
             campsite == null -> Text("This campsite is no longer available.", color = textDark, modifier = Modifier.padding(20.dp))
-            else -> CampsiteDetailsContent(campsite!!)
+            else -> CampsiteDetailsContent(campsite!!, onClick = { onClick() })
         }
     }
 }
@@ -95,7 +101,7 @@ private fun DetailsHeader(onBack: () -> Unit) {
 
 /** Displays campsite information, a photo placeholder, and associated open lotteries. */
 @Composable
-internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
+internal fun CampsiteDetailsContent(campsite: CampsiteInfo, onClick: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -126,7 +132,10 @@ internal fun CampsiteDetailsContent(campsite: CampsiteInfo) {
         }
 
         DetailHeading("Available Lotteries")
-        CampsiteLotteries(campsite.id)
+        CampsiteLotteries(
+            campsite.id,
+            onClick = { onClick() }
+        )
         if (campsite.rating != null) {
             DetailHeading("Overall Rating")
             Text("★ ${campsite.rating} / 5",
@@ -173,17 +182,20 @@ internal fun registrationIsOpen(start: String, end: String, today: String): Bool
 
 /** Reads the campsite's associated lotteries from Firestore and lists those open for registration. */
 @Composable
-private fun CampsiteLotteries(campsiteId: String) {
-    var names by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
+private fun CampsiteLotteries(campsiteId: String, onClick: () -> Unit ) {
+    var ids by remember(campsiteId) { mutableStateOf<List<String>>(emptyList()) }
     var loading by remember(campsiteId) { mutableStateOf(true) }
     var failed by remember(campsiteId) { mutableStateOf(false) }
     var reloadCount by remember { mutableIntStateOf(0) }
+    val lotRepo = remember { LotteryRepository() }
+    val interactionSource = remember {MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
     LaunchedEffect(campsiteId, reloadCount) {
         loading = true
         failed = false
         val db = Firebase.firestore
         val campsite = db.collection("campsites").document(campsiteId)
-        db.collection("Lotteries").whereArrayContains("campsites", campsite)
+        db.collection("Lotteries").whereArrayContains("campsites", campsite.id)
             .get(Source.SERVER)
             .addOnSuccessListener { snapshot ->
                 val openLotteries = mutableListOf<String>()
@@ -192,10 +204,10 @@ private fun CampsiteLotteries(campsiteId: String) {
                     val start = document.get("registrationStart") as? String ?: continue
                     val end = document.get("registrationEnd") as? String ?: continue
                     if (registrationIsOpen(start, end, today)) {
-                        openLotteries.add(document.getString("name") ?: "Unnamed lottery")
+                        openLotteries.add(document.getString("id") ?: "")
                     }
                 }
-                names = openLotteries
+                ids = openLotteries
                 loading = false
             }
             .addOnFailureListener {
@@ -209,11 +221,25 @@ private fun CampsiteLotteries(campsiteId: String) {
             Text("Lottery information couldn't be loaded.", color = textGray)
             TextButton(onClick = { reloadCount++ }) { Text("Retry lotteries", color = darkGreen) }
         }
-        names.isEmpty() -> Text("No lotteries are currently open for registration.", color = textGray)
+        ids.isEmpty() -> Text("No lotteries are currently open for registration.", color = textGray)
         else -> Surface(color = Color(0xFFE3D005), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${names.size} ${if (names.size == 1) "lottery" else "lotteries"} open", color = darkGreen, fontWeight = FontWeight.Bold)
-                for (name in names) Text(name, color = textDark)
+                Text("${ids.size} ${if (ids.size == 1) "lottery" else "lotteries"} open", color = darkGreen, fontWeight = FontWeight.Bold)
+                for (id in ids) {
+                    Text(
+                        lotRepo.getLottery(id)?.name ?: "",
+                        textDecoration = if(isPressed)
+                            TextDecoration.Underline
+                        else
+                            TextDecoration.None,
+                        color = textDark,
+                        modifier = Modifier.clickable (
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = { onClick() }
+                        )
+                    )
+                }
             }
         }
     }

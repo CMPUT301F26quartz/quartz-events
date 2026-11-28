@@ -1,5 +1,6 @@
 package com.example.quartzevents.LotteryFunctions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +23,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,23 +31,35 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.example.quartzevents.Classes.Campsite
 import com.example.quartzevents.Classes.Entrant
 import com.example.quartzevents.Classes.Lottery
 import com.example.quartzevents.R
+import com.example.quartzevents.Repositories.CampsiteRepoMain
+import com.example.quartzevents.Repositories.LotteryRepository
+import com.example.quartzevents.Repositories.UserRepoMain
 
 @Composable
 fun LotteryDetailScreen (
-    onAddEntrant: (Lottery, Entrant) -> Unit,
-    lotteries: List<Lottery>,
-    lottery: Lottery,
-    campsite: String,
-    user: Entrant
+    lotteryId: String,
+    userId: String,
+    onAddClick: () -> Unit,
+    onBack: () -> Unit
 ) {
-    var backB by remember { mutableStateOf(false) }
-    var nextScreen by remember { mutableStateOf(false) }
+    val lotRepo = remember { LotteryRepository() }
+    val lotteries = lotRepo.getAllLotteries()
+    var lottery = Lottery()
+    lotteries.forEach{ item ->
+        if (item.id == lotteryId)
+            lottery = item
+    }
+    val userRepo = remember { UserRepoMain() }
+    val entrants = userRepo.getAllEntrants()
+    var entrant = Entrant()
+    entrants.forEach{ item ->
+        if (item.uid == userId)
+            entrant = item
+    }
     val months: MutableMap<Int, String> = mutableMapOf(
         Pair(1, "Jan"),
         Pair(2, "Feb"),
@@ -75,9 +87,7 @@ fun LotteryDetailScreen (
         ) {
             IconButton(
                 modifier = Modifier.padding(start = 15.dp),
-                onClick = {
-                    backB = true
-                }
+                onClick = onBack
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
@@ -126,12 +136,18 @@ fun LotteryDetailScreen (
                         fontSize = 23.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    val campRepo = remember { CampsiteRepoMain() }
+                    val campsites = campRepo.getAllCamsites()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(top = 5.dp)
                     ) {
-                        itemsIndexed(lottery.campsites) { index, campsite ->
+                        itemsIndexed(lottery.campsites) { index, campsiteId ->
+                            var campsite = Campsite()
+                            campsites.forEach { item ->
+                                if (item.id == campsiteId)
+                                    campsite = item
+                            }
                             CampDisplay(
-                                modifier = Modifier,
                                 campsite = campsite
                             )
                             if (index < lottery.campsites.lastIndex) {
@@ -151,16 +167,16 @@ fun LotteryDetailScreen (
                             .padding(top = 5.dp)
                             .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
                     ) {
-                        var regDates: String = ""
-                        regDates += "Registration: " + months.get(
-                            lottery.registrationStart.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.registrationStart.dateStr()
-                            .slice(8..lottery.registrationStart.dateStr().length - 1)
-                            .toInt().toString() + " - " + months.get(
-                            lottery.registrationEnd.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.registrationEnd.dateStr()
-                            .slice(8..lottery.registrationEnd.dateStr().length - 1)
-                            .toInt().toString() + ", " + lottery.registrationEnd.dateStr()
+                        var regDates = ""
+                        regDates += "Registration: " + months[
+                            lottery.registrationStart.slice(5..6).toInt()
+                        ] + " " + lottery.registrationStart
+                            .slice(8..<lottery.registrationStart.length)
+                            .toInt().toString() + " - " + months[
+                            lottery.registrationEnd.slice(5..6).toInt()
+                        ] + " " + lottery.registrationEnd
+                            .slice(8..<lottery.registrationEnd.length)
+                            .toInt().toString() + ", " + lottery.registrationEnd
                             .slice(0..3)
                         Text(
                             regDates,
@@ -180,16 +196,16 @@ fun LotteryDetailScreen (
                             .padding(top = 5.dp)
                             .background(Color.LightGray, shape = RoundedCornerShape(20.dp))
                     ) {
-                        var bookDates: String = ""
-                        bookDates += "Registration: " + months.get(
-                            lottery.bookingStart.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.bookingStart.dateStr()
-                            .slice(8..lottery.bookingStart.dateStr().length - 1)
-                            .toInt().toString() + " - " + months.get(
-                            lottery.bookingEnd.dateStr().slice(5..6).toInt()
-                        ) + " " + lottery.bookingEnd.dateStr()
-                            .slice(8..lottery.bookingEnd.dateStr().length - 1)
-                            .toInt().toString() + ", " + lottery.bookingEnd.dateStr().slice(0..3)
+                        var bookDates = ""
+                        bookDates += "Registration: " + months[
+                            lottery.bookingStart.slice(5..6).toInt()
+                        ] + " " + lottery.bookingStart
+                            .slice(8..<lottery.bookingStart.length)
+                            .toInt().toString() + " - " + months[
+                            lottery.bookingEnd.slice(5..6).toInt()
+                        ] + " " + lottery.bookingEnd
+                            .slice(8..<lottery.bookingEnd.length)
+                            .toInt().toString() + ", " + lottery.bookingEnd.slice(0..3)
                         Text(
                             bookDates,
                             fontSize = 20.sp,
@@ -202,8 +218,8 @@ fun LotteryDetailScreen (
                     ) {
                         Button(
                             onClick = {
-                                nextScreen = true
-                                onAddEntrant(lottery, user)
+                                lottery.add_contestant(entrant)
+                                onAddClick()
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -216,27 +232,15 @@ fun LotteryDetailScreen (
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
-                        if (nextScreen) {
-                            LotteryStatusScreen(
-                                { Lottery, Entrant -> Unit },
-                                lotteries,
-                                lottery,
-                                campsite,
-                                user
-                            )
-                        }
                     }
                 }
             }
         }
-    if (backB) {
-        ActiveLotteriesScreen(lotteries, campsite, user)
-    }
+    BackHandler(onBack = onBack)
 }
 
 @Composable
 fun CampDisplay(
-    modifier: Modifier,
     campsite: Campsite
 ) {
     Box (
