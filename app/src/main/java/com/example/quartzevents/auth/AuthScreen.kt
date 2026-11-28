@@ -103,7 +103,6 @@ fun AuthScreen(
 
     val context = LocalContext.current
     val deviceId = getDeviceId(context)
-    println("******************* DeviceId = $deviceId **********************")
 
     val isSignUpValid = firstName.isNotBlank() &&
             lastName.isNotBlank() &&
@@ -404,32 +403,22 @@ fun AuthScreen(
             Button(
                 onClick= {
                     //TODO: change permissions in firebase, test, get rid of all the println's
-                    println("############ Device button clicked ################")
-                    println("################## Num of users is ${users.size} ##############")
                     for(user in users){
                         if(user.deviceLogin){
-                            println("################# deviceLogin is true #################")
                             for(id in user.deviceId){
-                                println("################################# id is: $id ###############")
                                 if(deviceId == id){
-                                    println("################# deviceId Matches #################")
                                     deviceFound = true
                                     repository.login(deviceId = deviceId){ success, error ->
                                         if (success) {
-                                            val uid = repository.getCurrentUserId()
-                                            if (uid != null) {
-                                                repository.getUserProfile(uid) { profile, profileError ->
-                                                    isLoading = false
-                                                    if (profile != null) {
-                                                        onAuthenticated(profile)
-                                                    } else {
-                                                        errorMessage = profileError
-                                                            ?: "Could not load user profile."
-                                                    }
-                                                }
-                                            } else {
+                                            val uid = user.uid
+                                            repository.getUserProfile(uid) { profile, profileError ->
                                                 isLoading = false
-                                                errorMessage = "Could not get user ID."
+                                                if (profile != null) {
+                                                    onAuthenticated(profile)
+                                                } else {
+                                                    errorMessage = profileError
+                                                        ?: "Could not load user profile."
+                                                }
                                             }
                                         } else {
                                             isLoading = false
@@ -524,7 +513,7 @@ fun AuthScreen(
 //        }
 //    }
 //}
-
+//
 //fun loginGo(success: Boolean, repository: AuthRepository, ){
 //    if (success) {
 //        val uid = repository.getCurrentUserId()

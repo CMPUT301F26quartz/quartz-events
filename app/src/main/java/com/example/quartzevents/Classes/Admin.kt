@@ -15,7 +15,8 @@ class Admin(
     name: String = "",
     uid: String = "",
     deviceLogin: Boolean = false,
-    deviceId: List<String> = emptyList()
-) : User(email, name, role = "admin", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId) {
+    deviceId: List<String> = emptyList(),
+    password:String = ""
+) : User(email, name, role = "admin", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId, password) {
     val messages: MutableList<Message> = mutableListOf()
 }

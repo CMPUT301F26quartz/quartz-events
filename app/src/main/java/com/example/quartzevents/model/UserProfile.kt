@@ -10,5 +10,8 @@ data class UserProfile(
     val email: String = "",
     val role: String = "entrant",
     val username: String = "",
-    val phoneNumber: String = ""
+    val phoneNumber: String = "",
+    val password: String,
+    val deviceLogin: Boolean,
+    val deviceId: List<String>
 )

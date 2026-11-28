@@ -275,8 +275,7 @@ class ReservationRepository {
                     Reservation::class.java
                 )
 
-                if (initialReservation == null ||
-                    initialReservation.entrantId != uid
+                if (initialReservation == null
                 ) {
                     onResult(false, "Reservation not found.")
                     return@addOnSuccessListener
@@ -405,6 +404,107 @@ class ReservationRepository {
                 onResult(
                     null,
                     error.message ?: "Could not load reservations."
+                )
+            }
+    }
+
+    // Cancel a reservation and release its booked nights.
+    // This is for the purpose of deleting a campsite or a user by admin
+    fun cancelReservationByAdmin(
+        reservationId: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+
+        if (reservationId.isBlank()) {
+            onResult(false, "Invalid reservation.")
+            return
+        }
+
+        val reservationRef = reservations.document(reservationId)
+
+        reservationRef.get()
+            .addOnSuccessListener { initialSnapshot ->
+
+                val initialReservation = initialSnapshot.toObject(
+                    Reservation::class.java
+                )
+
+                if (initialReservation == null
+                ) {
+                    onResult(false, "Reservation not found.")
+                    return@addOnSuccessListener
+                }
+
+                val lockRef = bookingLocks.document(
+                    initialReservation.campsiteId
+                )
+
+                db.runTransaction { transaction ->
+
+                    val reservationSnapshot =
+                        transaction.get(reservationRef)
+
+                    val lockSnapshot = transaction.get(lockRef)
+
+                    val reservation = reservationSnapshot.toObject(
+                        Reservation::class.java
+                    ) ?: throw IllegalStateException(
+                        "Reservation not found."
+                    )
+
+                    val start = LocalDate.parse(
+                        reservation.startDate
+                    )
+                    val end = LocalDate.parse(
+                        reservation.endDate
+                    )
+
+                    if (start.isBefore(LocalDate.now())) {
+                        throw IllegalStateException(
+                            "Started or past reservations cannot be cancelled."
+                        )
+                    }
+
+                    val bookedDates = (
+                            lockSnapshot.get("bookedDates") as? Map<*, *>
+                            )?.entries?.associate { entry ->
+                            entry.key.toString() to entry.value.toString()
+                        }?.toMutableMap() ?: mutableMapOf()
+
+                    getBookedNights(start, end).forEach { night ->
+                        if (bookedDates[night] == reservationId) {
+                            bookedDates.remove(night)
+                        }
+                    }
+
+                    transaction.set(
+                        lockRef,
+                        mapOf("bookedDates" to bookedDates)
+                    )
+
+                    transaction.update(
+                        reservationRef,
+                        "status",
+                        "cancelled"
+                    )
+
+                    true
+                }.addOnSuccessListener {
+                    onResult(
+                        true,
+                        "Reservation cancelled successfully."
+                    )
+                }.addOnFailureListener { error ->
+                    onResult(
+                        false,
+                        error.message ?: "Cancellation failed."
+                    )
+                }
+            }
+            .addOnFailureListener { error ->
+                onResult(
+                    false,
+                    error.message ?: "Could not load reservation."
                 )
             }
     }

@@ -16,8 +16,9 @@ class Owner(
     name: String = "",
     uid: String = "",
     deviceLogin: Boolean = false,
-    deviceId: List<String> = emptyList()
-) : User(email, name, role = "owner", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId) {
+    deviceId: List<String> = emptyList(),
+    password: String = ""
+) : User(email, name, role = "owner", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId, password) {
     val campsites: MutableList<Campsite> = mutableListOf()
     val messages: MutableList<Message> = mutableListOf()
 }

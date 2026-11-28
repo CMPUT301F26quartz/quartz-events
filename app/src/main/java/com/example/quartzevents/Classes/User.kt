@@ -19,5 +19,6 @@ abstract class User(
     var role: String = "",
     var uid: String = "",
     var deviceLogin: Boolean = false,
-    var deviceId: List<String> = emptyList()
+    var deviceId: List<String> = emptyList(),
+    var password: String = ""
 ){}

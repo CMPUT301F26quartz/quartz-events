@@ -42,7 +42,10 @@ class AuthRepository {
                     email = email,
                     role = role,
                     username = username,
-                    phoneNumber = phoneNumber
+                    phoneNumber = phoneNumber,
+                    password = password,
+                    deviceLogin = false,
+                    deviceId = mutableListOf<String>()
                 )
                 saveUserProfile(profile) { success, error ->
                     onResult(success, error)
@@ -60,8 +63,24 @@ class AuthRepository {
         deviceId: String = "",
         onResult: (Boolean, String?) -> Unit
     ) {
-        if(email != "") {
-            auth.signInWithEmailAndPassword(email, password)
+
+        var username = email
+        var pass = password
+
+        if(deviceId!="" && email=="" && password==""){
+            val repo = UserRepoMain()
+            val user = repo.findUserByDeviceId(deviceId)
+            if(user!=null){
+                username = user.email
+                pass = user.password
+            }
+            else{
+                onResult(false, "User not found for this device.")
+            }
+        }
+
+        if(username != "") {
+            auth.signInWithEmailAndPassword(username, pass)
                 .addOnSuccessListener {
                     onResult(true, null)
                 }
@@ -69,9 +88,6 @@ class AuthRepository {
                     onResult(false, exception.message)
                 }
 
-        }
-        else if(deviceId!=""){
-            onResult(true, null)
         }
 
     }

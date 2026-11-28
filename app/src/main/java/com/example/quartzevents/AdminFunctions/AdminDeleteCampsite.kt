@@ -211,7 +211,7 @@ fun deleteCampsiteReservations(campId:String?){
     }
 
     for(reservation in reservations){
-        resRepo.cancelReservation(reservation.id){success, message -> }
+        resRepo.cancelReservationByAdmin(reservation.id){success, message -> }
     }
 
 }

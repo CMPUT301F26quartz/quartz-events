@@ -18,8 +18,9 @@ class Entrant(
     name: String = "",
     uid: String = "",
     deviceLogin: Boolean = false,
-    deviceId: List<String> = emptyList()
-) : User(email, name, role = "entrant", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId) {
+    deviceId: List<String> = emptyList(),
+    password: String = ""
+) : User(email, name, role = "entrant", uid = uid, deviceLogin=deviceLogin, deviceId = deviceId, password) {
 
     val reservations: MutableList<Reservation> = mutableListOf()
     var notificationsOn = true

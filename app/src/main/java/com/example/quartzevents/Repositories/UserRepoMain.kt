@@ -99,4 +99,18 @@ class UserRepoMain {
             }
             .addOnFailureListener { e -> Log.e("addDevice", "Query failed", e) }
     }
+
+    fun findUserByDeviceId(id:String):User?{
+        for(user in _users){
+            if(user.deviceLogin) {
+                for(device in user.deviceId) {
+                    if (device == id) {
+                        return user
+                    }
+                }
+            }
+        }
+        return null
+    }
+
 }
