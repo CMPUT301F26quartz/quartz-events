@@ -24,6 +24,8 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import com.example.quartzevents.AdminFunctions.AdminDashboardScreen
+import com.example.quartzevents.Classes.Campsite
+import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.Classes.Date
 import com.example.quartzevents.EntrantFunctions.EntrantSearchScreen
 import com.example.quartzevents.OwnerFunctions.LotteryCreationScreen1
@@ -100,6 +102,8 @@ fun QuartzEventsApp() {
 
     var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
 
+    var editingCampsite by remember { mutableStateOf<Campsite?>(null) }
+
     var selectedLotteryId by rememberSaveable { mutableStateOf<String?>(null) }
 
     var selectedSitesForLottery by rememberSaveable { mutableStateOf<String?>(null) }
@@ -170,11 +174,17 @@ fun QuartzEventsApp() {
 
 
             if (currentProfile?.role == "owner") {
-                //CheckLotteries()
-                if (selectedCampsiteId != null) {
+                if (editingCampsite != null) {
+                    RegisterCampsite(
+                        onBack = { editingCampsite = null },
+                        onSaveSuccess = { editingCampsite = null },
+                        campsiteToEdit = editingCampsite
+                    )
+                } else if (selectedCampsiteId != null) {
                     CampsiteDetails(
                         campsiteId = selectedCampsiteId!!,
-                        onBack = { selectedCampsiteId = null }
+                        onBack = { selectedCampsiteId = null },
+                        onEditClick = { campsite -> editingCampsite = campsite }
                     )
                 } else if (isCreatingCampsite) {
                     RegisterCampsite(
@@ -182,7 +192,7 @@ fun QuartzEventsApp() {
                         onSaveSuccess = { isCreatingCampsite = false }
                     )
 
-                }else if (isViewingLottery) {
+                } else if (isViewingLottery) {
                     OwnerLotteryHomeScreen(
                         currentProfile!!,
                         onCreateLottery = { isCreatingLottery1 = true; isViewingLottery = false },
@@ -345,7 +355,6 @@ private fun SearchCampsitesButton(
         Text(text = "Search Campsites")
     }
 }
-
 /**
  * Checks the database to see if any of the lotteries have reached draw date,
  * then calls the selectWinner function from the lottery class to

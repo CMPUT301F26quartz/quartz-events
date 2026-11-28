@@ -31,11 +31,17 @@ class CampsiteRepository {
         campsite: Campsite,
         onResult: (Boolean, String?) -> Unit
     ) {
-        val newCampsiteRef = db.collection("campsites").document()
+        val collection = db.collection("campsites")
 
-        val campsiteToSave = campsite.copy(id = newCampsiteRef.id)
+        val docRef = if (campsite.id.isEmpty()) {
+            collection.document()
+        } else {
+            collection.document(campsite.id)
+        }
 
-        newCampsiteRef.set(campsiteToSave)
+        val campsiteToSave = campsite.copy(id = docRef.id)
+
+        docRef.set(campsiteToSave)
             .addOnSuccessListener {
                 onResult(true, null)
             }
@@ -76,13 +82,16 @@ class CampsiteRepository {
      * @param onResult Callback returning the campsite.
      */
 
-    fun getCampsiteById(campsiteId: String, onResult: (Campsite?, String?) -> Unit) {
-        db.collection("campsites").document(campsiteId).get()
+    fun getCampsiteById(id: String, onResult: (Campsite?, String?) -> Unit) {
+        db.collection("campsites").document(id).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    onResult(document.toObject(Campsite::class.java), null)
+                    val campsite = document.toObject(Campsite::class.java)
+                    campsite?.let {
+                        onResult(it.copy(id = document.id), null)
+                    }
                 } else {
-                    onResult(null, "Not found")
+                    onResult(null, "Campsite not found")
                 }
             }
             .addOnFailureListener { onResult(null, it.message) }
