@@ -47,7 +47,7 @@ fun EntrantSearchScreen(profile: UserProfile, onBack: () -> Unit) {
     var searchText by remember { mutableStateOf("") }
     var filters by remember { mutableStateOf(CampsiteFilters()) }
     var page by remember { mutableStateOf(SearchPage.SEARCH) }
-    var selectedCampsiteId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCampsiteId by remember { mutableStateOf<String?>(null) }
     var selectedLotteryId by rememberSaveable { mutableStateOf<String?>(null) }
     var reloadCount by remember { mutableIntStateOf(0) }
     val repository = remember(reloadCount) { CampsiteInfoRepository() }
@@ -98,10 +98,11 @@ fun EntrantSearchScreen(profile: UserProfile, onBack: () -> Unit) {
                 onClick = {
                     isViewingLotteries = true
                 },
-                onBack = { selectedCampsiteId = null }
+                onBack = { selectedCampsiteId = null },
+                repository = repository
             )
+            return
         }
-        return
     }
 
     if (page == SearchPage.FILTERS) {

@@ -35,7 +35,7 @@ import com.example.quartzevents.EntrantFunctions.EntrantHomeScreen
 import com.example.quartzevents.LotteryFunctions.ActiveLotteriesScreen
 import com.example.quartzevents.OwnerFunctions.OwnerHomeScreen
 import com.example.quartzevents.OwnerFunctions.RegisterCampsite
-import com.example.quartzevents.EntrantFunctions.CampsiteDetailsScreen
+import com.example.quartzevents.OwnerFunctions.CampsiteDetails
 import com.example.quartzevents.OwnerFunctions.LotteryNonOwnerUpdateScreen
 import com.example.quartzevents.Repositories.LotteryRepository
 import com.example.quartzevents.Repositories.UserRepoMain
@@ -172,10 +172,9 @@ fun QuartzEventsApp() {
             if (currentProfile?.role == "owner") {
                 //CheckLotteries()
                 if (selectedCampsiteId != null) {
-                    CampsiteDetailsScreen(
+                    CampsiteDetails(
                         campsiteId = selectedCampsiteId!!,
-                        onBack = { selectedCampsiteId = null },
-                        showOwnerActions = true
+                        onBack = { selectedCampsiteId = null }
                     )
                 } else if (isCreatingCampsite) {
                     RegisterCampsite(

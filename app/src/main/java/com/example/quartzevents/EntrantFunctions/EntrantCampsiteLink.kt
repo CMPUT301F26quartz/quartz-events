@@ -6,7 +6,11 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.quartzevents.Repositories.CampsiteInfoRepository
 
 /**
  * Extracts a campsite document ID from a quartz://campsite/{id} link.
@@ -40,5 +44,14 @@ fun EntrantCampsiteLink(link: String, onBack: () -> Unit) {
         return
     }
 
-    CampsiteDetailsScreen(campsiteId, onBack = onBack)
+    val repository = remember { CampsiteInfoRepository() }
+    DisposableEffect(repository) {
+        onDispose { repository.stopListening() }
+    }
+    CampsiteDetailsScreen(
+        campsiteId,
+        onClick = {  },
+        onBack,
+        repository
+    )
 }
