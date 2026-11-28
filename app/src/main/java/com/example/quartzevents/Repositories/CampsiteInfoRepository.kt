@@ -50,24 +50,22 @@ class CampsiteInfoRepository {
         }
     }
 
-    companion object {
-        /**
-         * Reads a single campsite from the Firestore server.
-         *
-         * @param id The campsite's Firestore document ID.
-         * @param onResult Receives the campsite and an optional error message. Both are null if the document is missing.
-         */
-        fun getCampsite(id: String, onResult: (CampsiteInfo?, String?) -> Unit) {
-            Firebase.firestore.collection("campsites").document(id).get(Source.SERVER)
-                .addOnSuccessListener { document ->
-                    val fields = document.data
-                    val campsite = if (fields == null) null else readCampsite(document.id, fields)
-                    onResult(campsite, null)
-                }
-                .addOnFailureListener {
-                    onResult(null, "Couldn't load this campsite. Please retry.")
-                }
-        }
+    /**
+     * Reads a single campsite from the Firestore server.
+     *
+     * @param id The campsite's Firestore document ID.
+     * @param onResult Receives the campsite and an optional error message. Both are null if the document is missing.
+     */
+    fun getCampsite(id: String, onResult: (CampsiteInfo?, String?) -> Unit) {
+        campsitesRef.document(id).get(Source.SERVER)
+            .addOnSuccessListener { document ->
+                val fields = document.data
+                val campsite = if (fields == null) null else readCampsite(document.id, fields)
+                onResult(campsite, null)
+            }
+            .addOnFailureListener {
+                onResult(null, "Couldn't load this campsite. Please retry.")
+            }
     }
 
     /** Removes the live list listener when its owning page leaves the composition. */
